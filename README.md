@@ -102,6 +102,7 @@ Puerto por defecto de la aplicacion: `8185`.
 Archivos incluidos para contenedorizacion:
 
 - `Dockerfile`
+- `docker-compose.yml`
 - `.dockerignore`
 - `.env`
 - `.env.example`
@@ -116,6 +117,18 @@ Ejecucion con Docker:
 
 ```bash
 docker run --name omnistack --env-file .env -p 8185:8185 omnistack-backend:local
+```
+
+Ejecucion recomendada con Docker Compose para levantar siempre el contenedor con nombre fijo `omnistack`:
+
+```bash
+docker compose up --build -d
+```
+
+Detener y eliminar el contenedor creado por Compose:
+
+```bash
+docker compose down
 ```
 
 Variables de entorno principales:
@@ -292,10 +305,13 @@ Se incluyen artefactos versionados para pruebas manuales en la carpeta `postman/
   "category_code": "1",
   "subcategory_code": "1",
   "service_provider_code": "1",
-  "rms_item_code": "10001565826",
-  "userid": "997561",
-  "phone": "123456",
-  "document": "0912345678"
+  "rms_item_code": "10001565827",
+  "userid": "",
+  "phone": "",
+  "withdrawId": "7667",
+  "password": "88422",
+  "document": "",
+  "amount": 1.00
 }
 ```
 
@@ -390,8 +406,12 @@ Ejemplo `PRECHECK CASH_OUT`:
   "subcategory_code": "1",
   "service_provider_code": "1",
   "rms_item_code": "10001565827",
+  "userid": "",
+  "phone": "",
   "withdrawId": "7667",
-  "password": "88422"
+  "password": "88422",
+  "document": "",
+  "amount": 1.00
 }
 ```
 
