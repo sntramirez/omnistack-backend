@@ -75,8 +75,8 @@ public class AppProperties {
 
     @Data
     public static class Integrations {
-        private int defaultConnectTimeoutMs;
-        private int defaultReadTimeoutMs;
+        private int defaultConnectTimeoutMs = 60000;
+        private int defaultReadTimeoutMs = 60000;
         private boolean mockEnabled;
     }
 
@@ -90,11 +90,33 @@ public class AppProperties {
         private String baseUrl;
         private String technicalUser;
         private String providerName;
+        private String categoryCode;
+        private String subcategoryCode;
         private String serviceProviderCode;
         private String shopId;
         private Integer country;
         private String token;
+        private String canal;
+        private Integer medioId;
+        private Integer puntoOperacionId;
+        private ProviderTokenProperties auth = new ProviderTokenProperties();
         private Map<String, ProviderCapabilityProperties> services = new HashMap<>();
+    }
+
+    @Data
+    public static class ProviderTokenProperties {
+        private String mode = "STATIC";
+        private long ttlHours = 24;
+        private boolean refreshOnStartup = true;
+        private ProviderLoginProperties login = new ProviderLoginProperties();
+    }
+
+    @Data
+    public static class ProviderLoginProperties {
+        private String path;
+        private String username;
+        private String password;
+        private String productToSell;
     }
 
     @Data
