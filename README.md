@@ -150,13 +150,22 @@ Variables de entorno principales:
 - `APP_INTEGRATION_PROVIDERS_DEFAULT_BASE_URL`
 - `APP_INTEGRATION_PROVIDERS_DEFAULT_TECHNICAL_USER`
 - `APP_INTEGRATION_PROVIDERS_ECUABET_BASE_URL`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_CATEGORY_CODE`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_SUBCATEGORY_CODE`
 - `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICE_PROVIDER_CODE`
 - `APP_INTEGRATION_PROVIDERS_ECUABET_SHOP_ID`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_SHOP_IP` (opcional; si esta vacio se resuelve desde la IP local del servidor)
 - `APP_INTEGRATION_PROVIDERS_ECUABET_COUNTRY`
 - `APP_INTEGRATION_PROVIDERS_ECUABET_TOKEN`
 - `APP_INTEGRATION_PROVIDERS_ECUABET_AUTH_MODE`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICES_PRECHECK_CASHIN_ITEM`
 - `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICES_PRECHECK_CASHIN_PATH`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICES_PRECHECK_CASHOUT_ITEM`
 - `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICES_PRECHECK_CASHOUT_PATH`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICES_EXECUTE_CASHIN_ITEM`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICES_EXECUTE_CASHIN_PATH`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICES_EXECUTE_CASHOUT_ITEM`
+- `APP_INTEGRATION_PROVIDERS_ECUABET_SERVICES_EXECUTE_CASHOUT_PATH`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_BASE_URL`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_CATEGORY_CODE`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_SUBCATEGORY_CODE`
@@ -164,10 +173,20 @@ Variables de entorno principales:
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_CANAL`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_MEDIO_ID`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_PUNTO_OPERACION_ID`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SHOP_IP`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_CLIENTE_ID`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_PRECHECK_CASHIN_ITEM`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_PRECHECK_CASHIN_PATH`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_PRECHECK_CASHIN_CAPABILITIES`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_PRECHECK_CASHIN_NAME`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_EXECUTE_CASHIN_ITEM`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_EXECUTE_CASHIN_PATH`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_EXECUTE_CASHIN_CAPABILITIES`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_EXECUTE_CASHIN_NAME`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_EXECUTE_CASHOUT_ITEM`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_EXECUTE_CASHOUT_PATH`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_EXECUTE_CASHOUT_CAPABILITIES`
+- `APP_INTEGRATION_PROVIDERS_LOTERIA_SERVICES_EXECUTE_CASHOUT_NAME`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_AUTH_MODE`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_AUTH_TTL_HOURS`
 - `APP_INTEGRATION_PROVIDERS_LOTERIA_AUTH_REFRESH_ON_STARTUP`
@@ -273,6 +292,7 @@ Se incluyen artefactos versionados para pruebas manuales en la carpeta `postman/
               "max_amount": "200",
               "timeout_ws_max": "10000",
               "retries_ws_max": "3",
+              "num_tickets": "3",
               "capabilities": [
                 "PRECHECK",
                 "EXECUTE",
@@ -331,7 +351,6 @@ Se incluyen artefactos versionados para pruebas manuales en la carpeta `postman/
   "store_name": "FYBECA AMAZONAS",
   "pos": "1",
   "channel_POS": "POS",
-  "movement_type": "CASH_IN",
   "category_code": "1",
   "subcategory_code": "1",
   "service_provider_code": "2",
@@ -368,6 +387,57 @@ Se incluyen artefactos versionados para pruebas manuales en la carpeta `postman/
   "userid": "997561",
   "document": "0912345678",
   "amount": 25.50
+}
+```
+
+### POST `/v1/execute` ECUABET CASH_IN
+
+```json
+{
+  "uuid": "f0908f64-9145-45cf-a22c-c36bca604372",
+  "chain": "1",
+  "store": "148",
+  "store_name": "FYBECA EL BATAN",
+  "pos": "1",
+  "channel_POS": "POS",
+  "category_code": "1",
+  "subcategory_code": "1",
+  "service_provider_code": "1",
+  "rms_item_code": "10001565826",
+  "userid": "997561",
+  "phone": "123456",
+  "document": "0912345678",
+  "amount": 100000.00
+}
+```
+
+### Response `/v1/execute` ECUABET CASH_IN
+
+```json
+{
+  "chain": "1",
+  "store": "148",
+  "store_name": "FYBECA EL BATAN",
+  "pos": "1",
+  "channel_POS": "POS",
+  "category_code": "1",
+  "subcategory_code": "1",
+  "service_provider_code": "1",
+  "rms_item_code": "10001565826",
+  "is_error": false,
+  "status": {
+    "code": "0",
+    "message": "Transaccion correcta"
+  },
+  "uuid": "f0908f64-9145-45cf-a22c-c36bca604372",
+  "providerCode": "0",
+  "providerMessage": "Transaccion correcta",
+  "username": "Carlos",
+  "lastname": "Perez",
+  "currency": "USD",
+  "authorization": "91081",
+  "document": "0912345678",
+  "amount": 100000.00
 }
 ```
 
@@ -442,7 +512,7 @@ La integracion inicial de ECUABET para `PRECHECK` usa el endpoint externo `POST 
 - response interna: replica `chain`, `store`, `store_name`, `pos`, `channel_POS`, `uuid`, `category_code`, `subcategory_code`, `service_provider_code` y `rms_item_code`
 - mapeo funcional: `is_error <- error`, `error.code <- code`, `error.message <- error`, `username <- name`, `status.code <- code`, `status.message <- "Transacción correcta"`
 - `authorization`: si ECUABET no la retorna, OMNISTACK la genera automaticamente
-- `movement_type` no es obligatorio en `precheck`; la aplicacion usa la definicion del servicio resuelta desde catalogo/business-lines
+- `movement_type` no es requerido en los endpoints transaccionales; la aplicacion resuelve CASH_IN o CASH_OUT desde la definicion del servicio en catalogo/business-lines segun `rms_item_code`
 - resolucion de ruta: OMNISTACK usa `provider -> capability -> flow(cashin/cashout)`, validando el `item` configurado contra el `rms_item_code` del servicio
 
 El adapter HTTP real invoca `https://apidev.virtualsoft.tech/operatorapi-new/user/search` o la URL configurada por propiedades.
@@ -469,7 +539,6 @@ Ejemplo `PRECHECK CASH_OUT`:
   "store_name": "FYBECA AMAZONAS",
   "pos": "1",
   "channel_POS": "POS",
-  "movement_type": "CASH_OUT",
   "category_code": "1",
   "subcategory_code": "1",
   "service_provider_code": "1",
@@ -494,6 +563,83 @@ Ejemplo `PRECHECK CASH_OUT`:
 
 El adapter HTTP real invoca `https://apidev.virtualsoft.tech/operatorapi-new/user/searchwithdraw` cuando el servicio resuelto corresponde a `CASH_OUT`.
 
+### ECUABET EXECUTE CASH_IN
+
+La recarga de saldos ECUABET usa `service_provider_code=1` y `rms_item_code=10001565826` para ejecutar el deposito externo.
+
+- endpoint externo: `POST /user/deposit`
+- headers comunes: `chain`, `store`, `store_name`, `pos`, `channel_POS`
+- body externo: `shop`, `token`, `userid`, `country`, `amount`, `transactionId`, `shop_info`, `shop_ip`
+- `transactionId`: OMNISTACK genera un entero para enviarlo a ECUABET; si ECUABET retorna `transactionId`, se devuelve al consumidor como `authorization`
+- `shop_info`: se mapea desde `store_name`
+- `shop_ip`: usa `APP_INTEGRATION_PROVIDERS_ECUABET_SHOP_IP` si esta configurado; si no, se resuelve desde la IP local del servidor
+- mapeo response: `is_error <- error`, `error.code <- code`, `error.message <- error/message`, `username <- nombre|name`, `lastname <- apellido|lastname`, `currency <- currency`, `status.code <- code`, `status.message <- "Transaccion correcta"`, `authorization <- transactionId externo`, `document <- document`, `amount <- amount`
+- seguridad: el endpoint interno conserva el mecanismo actual del backend; la autorizacion por rol queda como pendiente tecnico mientras no exista un modulo de seguridad configurado en el proyecto
+
+Request externo generado:
+
+```json
+{
+  "shop": "998739",
+  "token": "token-ecuabet",
+  "userid": 997561,
+  "country": 66,
+  "amount": 100000.00,
+  "transactionId": 91081,
+  "shop_info": "FYBECA EL BATAN",
+  "shop_ip": "10.0.0.10"
+}
+```
+
+### ECUABET EXECUTE CASH_OUT
+
+La ejecucion de nota de retiro ECUABET usa `service_provider_code=1` y el `rms_item_code` CASH_OUT expuesto por business-lines (`10001565827` en el catalogo actual).
+
+- endpoint externo: `POST /user/withdraw`
+- headers comunes: `chain`, `store`, `store_name`, `pos`, `channel_POS`
+- body externo: `shop`, `token`, `withdrawId`, `country`, `password`, `transactionId`, `shop_info`, `shop_ip`
+- `transactionId`: OMNISTACK genera un entero para enviarlo a ECUABET; si ECUABET retorna `transactionId`, se devuelve al consumidor como `authorization`
+- `shop_info`: se mapea desde `store_name`
+- `shop_ip`: usa `APP_INTEGRATION_PROVIDERS_ECUABET_SHOP_IP` si esta configurado; si no, se resuelve desde la IP local del servidor
+- mapeo response: `is_error <- error`, `error.code <- code`, `error.message <- error/message`, `status.code <- code`, `status.message <- "Transaccion correcta"`, `authorization <- transactionId externo`, `document <- document`, `amount <- amount`
+- seguridad: el endpoint interno conserva el mecanismo actual del backend; la autorizacion por rol queda como pendiente tecnico mientras no exista un modulo de seguridad configurado en el proyecto
+
+Request interno:
+
+```json
+{
+  "uuid": "f0908f64-9145-45cf-a22c-c36bca604372",
+  "chain": "1",
+  "store": "148",
+  "store_name": "FYBECA EL BATAN",
+  "pos": "1",
+  "channel_POS": "POS",
+  "category_code": "1",
+  "subcategory_code": "1",
+  "service_provider_code": "1",
+  "rms_item_code": "10001565827",
+  "withdrawId": "7668",
+  "password": "77992",
+  "document": "0912345678",
+  "amount": 25.50
+}
+```
+
+Request externo generado:
+
+```json
+{
+  "shop": "998739",
+  "token": "token-ecuabet",
+  "withdrawId": "7668",
+  "country": 66,
+  "password": "77992",
+  "transactionId": 10980,
+  "shop_info": "FYBECA EL BATAN",
+  "shop_ip": "10.0.0.10"
+}
+```
+
 ### LOTERIA BET593 PRECHECK CASH_IN
 
 La recarga de saldos BET593 usa el proveedor Loteria Nacional con resolucion por catalogo `category_code=1`, `subcategory_code=1`, `service_provider_code=2` y `rms_item_code=10001565828`.
@@ -516,6 +662,101 @@ Request externo generado:
   "cuentaweb": "0901111112",
   "valor": "9.99",
   "codigotrn": "f0908f64-9145-45cf-a22c-c36bca604372"
+}
+```
+
+### LOTERIA BET593 EXECUTE CASH_IN
+
+La confirmacion de recarga de saldos BET593 usa el mismo contexto comercial `category_code=1`, `subcategory_code=1`, `service_provider_code=2` y `rms_item_code=10001565828`.
+
+- endpoint externo: `POST /APIVentasLoteria/api/Ventas/ConfirmarBet593`
+- token externo: resuelto por el modulo de tokens mediante `category_code + subcategory_code + service_provider_code`
+- constantes configurables: `usuario`, `canal=BMV`, `medioId=23`, `puntooperacionId=52132`
+- mapeo request: `uuid -> codigotrn`, `document -> cuentaweb`, `authorization -> recargaid`, `serialnumber -> serialnumber`, `amount -> valor`
+- mapeo response: `msgError -> is_error/error.message`, `codError -> error.code/status.code`, `nombre -> username`, `apellido -> lastname`, `recargaid -> authorization`, `serialnumber -> serialnumber`, `cuentaweb -> document`, `valor -> amount`
+
+Request interno:
+
+```json
+{
+  "uuid": "f0908f64-9145-45cf-a22c-c36bca604372",
+  "chain": "1",
+  "store": "148",
+  "store_name": "FYBECA AMAZONAS",
+  "pos": "1",
+  "channel_POS": "POS",
+  "category_code": "1",
+  "subcategory_code": "1",
+  "service_provider_code": "2",
+  "rms_item_code": "10001565828",
+  "authorization": "9F968187-F436-4F19-8C1F-A7A4DA07A899",
+  "serialnumber": "7366ea56284a06a2a58f561b497386b80fcd3eaea858d0c511",
+  "document": "0901111112",
+  "amount": 9.99
+}
+```
+
+Request externo generado:
+
+```json
+{
+  "usuario": "USRFEMSAPREP",
+  "token": "token-dinamico",
+  "canal": "BMV",
+  "medioId": 23,
+  "puntooperacionId": 52132,
+  "cuentaweb": "0901111112",
+  "recargaid": "9F968187-F436-4F19-8C1F-A7A4DA07A899",
+  "serialnumber": "7366ea56284a06a2a58f561b497386b80fcd3eaea858d0c511",
+  "valor": "9.99",
+  "codigotrn": "f0908f64-9145-45cf-a22c-c36bca604372"
+}
+```
+
+### LOTERIA BET593 EXECUTE CASH_OUT
+
+La nota de retiro BET593 usa Loteria Nacional con resolucion por catalogo `category_code=1`, `subcategory_code=1`, `service_provider_code=2` y `rms_item_code=10001565829`.
+
+- endpoint externo: `POST /APIVentasLoteria/api/Ventas/RetirarBet593`
+- token externo: resuelto por el modulo de tokens mediante `category_code + subcategory_code + service_provider_code`
+- constantes configurables: `usuario/usuarioId`, `maquina`, `operacion=RETIROOL`, `clienteId=58542`, `medioId=23`
+- mapeo request: `uuid -> numeroTransaccion`, `document -> identificacion`, `withdrawId -> numeroRetiro`
+- mapeo response: `msgError -> is_error/error.message`, `codError -> error.code/status.code`, `ordenPagoId -> authorization`, `identificacion -> document`, `valor -> amount`
+
+Request interno:
+
+```json
+{
+  "uuid": "f0908f64-9145-45cf-a22c-c36bca604372",
+  "chain": "1",
+  "store": "148",
+  "store_name": "FYBECA AMAZONAS",
+  "pos": "1",
+  "channel_POS": "POS",
+  "category_code": "1",
+  "subcategory_code": "1",
+  "service_provider_code": "2",
+  "rms_item_code": "10001565829",
+  "document": "0911274165",
+  "withdrawId": "20240430800100007",
+  "amount": 17.00
+}
+```
+
+Request externo generado:
+
+```json
+{
+  "usuario": "USRFEMSAPREP",
+  "maquina": "192.168.3.230",
+  "operacion": "RETIROOL",
+  "token": "token-dinamico",
+  "usuarioId": "USRFEMSAPREP",
+  "clienteId": 58542,
+  "medioId": 23,
+  "numeroTransaccion": "f0908f64-9145-45cf-a22c-c36bca604372",
+  "identificacion": "0911274165",
+  "numeroRetiro": "20240430800100007"
 }
 ```
 
