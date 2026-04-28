@@ -21,4 +21,5 @@ public class Bet593WithdrawRequest {
     String numeroTransaccion;
     String identificacion;
     String numeroRetiro;
+    String motivo;
 }

@@ -13,6 +13,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * Request base compartido por las operaciones transaccionales.
+ */
 @Data
 @SuperBuilder
 @NoArgsConstructor
@@ -102,5 +105,8 @@ public abstract class BaseTransactionRequest {
      *
      * @return monto informado en la solicitud
      */
-    public abstract BigDecimal getAmount();
+    @Schema(hidden = true)
+    public BigDecimal getAmount() {
+        return null;
+    }
 }

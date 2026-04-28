@@ -8,9 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.omnistack.backend.application.dto.PrecheckResponse;
 import com.omnistack.backend.application.dto.ExecuteResponse;
+import com.omnistack.backend.application.dto.ReverseResponse;
 import com.omnistack.backend.application.dto.StatusDetail;
+import com.omnistack.backend.application.dto.VerifyResponse;
 import com.omnistack.backend.application.port.in.TransactionUseCase;
 import com.omnistack.backend.shared.exception.GlobalExceptionHandler;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -101,7 +104,7 @@ class TransactionControllerTest {
                 .uuid("uuid-cashout-execute")
                 .errorFlag(false)
                 .authorization("10980")
-                .status(new StatusDetail("0", "Transaccion correcta"))
+                .status(new StatusDetail("0", "Transacci\u00F3n correcta"))
                 .build());
 
         mockMvc.perform(post("/v1/execute")
@@ -128,6 +131,113 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$.uuid").value("uuid-cashout-execute"))
                 .andExpect(jsonPath("$.transactionId").doesNotExist())
                 .andExpect(jsonPath("$.authorization").value("10980"))
+                .andExpect(jsonPath("$.status.code").value("0"));
+    }
+
+    @Test
+    void shouldAcceptVerifyRequestWithoutAmount() throws Exception {
+        when(transactionUseCase.verify(any())).thenReturn(VerifyResponse.builder()
+                .uuid("uuid-verify")
+                .errorFlag(false)
+                .status(new StatusDetail("0", "Transaccion ha sido ejecutada"))
+                .build());
+
+        mockMvc.perform(post("/v1/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "uuid":"uuid-verify",
+                                  "chain":"1",
+                                  "store":"148",
+                                  "store_name":"FYBECA AMAZONAS",
+                                  "pos":"1",
+                                  "channel_POS":"POS",
+                                  "category_code":"1",
+                                  "subcategory_code":"1",
+                                  "service_provider_code":"2",
+                                  "rms_item_code":"10001565828",
+                                  "authorization":"9F968187-F436-4F19-8C1F-A7A4DA07A899",
+                                  "serialnumber":"7366ea56284a06a2a58f561b497386b80fcd3eaea858d0c511",
+                                  "document":"0901111112"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.uuid").value("uuid-verify"))
+                .andExpect(jsonPath("$.status.code").value("0"));
+    }
+
+    @Test
+    void shouldAcceptBet593CashoutReverseRequest() throws Exception {
+        when(transactionUseCase.reverse(any())).thenReturn(ReverseResponse.builder()
+                .uuid("uuid-reverse")
+                .errorFlag(false)
+                .authorization("ca9b201a-a668-45ed-876c-00affcb18580")
+                .document("0901111112")
+                .status(new StatusDetail("0", "Transaccion correcta"))
+                .build());
+
+        mockMvc.perform(post("/v1/reverse")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "uuid":"uuid-reverse",
+                                  "chain":"1",
+                                  "store":"148",
+                                  "store_name":"FYBECA AMAZONAS",
+                                  "pos":"1",
+                                  "channel_POS":"POS",
+                                  "category_code":"1",
+                                  "subcategory_code":"1",
+                                  "service_provider_code":"2",
+                                  "rms_item_code":"10001565829",
+                                  "authorization":"ca9b201a-a668-45ed-876c-00affcb18580",
+                                  "document":"0901111112",
+                                  "motivo":"Demora en obtener respuesta"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.uuid").value("uuid-reverse"))
+                .andExpect(jsonPath("$.authorization").value("ca9b201a-a668-45ed-876c-00affcb18580"))
+                .andExpect(jsonPath("$.document").value("0901111112"))
+                .andExpect(jsonPath("$.status.code").value("0"));
+    }
+
+    @Test
+    void shouldAcceptEcuabetCashinReverseRequest() throws Exception {
+        when(transactionUseCase.reverse(any())).thenReturn(ReverseResponse.builder()
+                .uuid("uuid-ecuabet-reverse")
+                .errorFlag(false)
+                .authorization("91081")
+                .document("0912345678")
+                .amount(new BigDecimal("100000.00"))
+                .status(new StatusDetail("0", "Transaccion correcta"))
+                .build());
+
+        mockMvc.perform(post("/v1/reverse")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "uuid":"uuid-ecuabet-reverse",
+                                  "chain":"1",
+                                  "store":"148",
+                                  "store_name":"FYBECA EL BATAN",
+                                  "pos":"1",
+                                  "channel_POS":"POS",
+                                  "category_code":"1",
+                                  "subcategory_code":"1",
+                                  "service_provider_code":"1",
+                                  "rms_item_code":"10001565826",
+                                  "authorization":"91081",
+                                  "document":"0912345678",
+                                  "amount":100000.00,
+                                  "motivo":"Demora en obtener respuesta"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.uuid").value("uuid-ecuabet-reverse"))
+                .andExpect(jsonPath("$.authorization").value("91081"))
+                .andExpect(jsonPath("$.document").value("0912345678"))
+                .andExpect(jsonPath("$.amount").value(100000.00))
                 .andExpect(jsonPath("$.status.code").value("0"));
     }
 }

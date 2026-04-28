@@ -4,10 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.omnistack.backend.application.port.in.ProviderTokenResolverUseCase;
 import com.omnistack.backend.application.port.out.Bet593RechargePort;
+import com.omnistack.backend.application.port.out.Bet593RechargeReversePort;
+import com.omnistack.backend.application.port.out.Bet593RechargeValidationPort;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.model.Bet593RechargeCommand;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.infrastructure.adapter.integration.loteria.dto.Bet593RechargeRequest;
+import com.omnistack.backend.infrastructure.adapter.integration.loteria.dto.Bet593RechargeReverseRequest;
 import com.omnistack.backend.infrastructure.adapter.integration.loteria.dto.Bet593RechargeResponse;
 import com.omnistack.backend.shared.exception.IntegrationException;
 import com.omnistack.backend.shared.util.JsonUtil;
@@ -29,9 +32,10 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class Bet593RechargeWebClientAdapter implements Bet593RechargePort {
+public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet593RechargeValidationPort, Bet593RechargeReversePort {
 
     private static final String PROVIDER_KEY = "loteria";
+    private static final String REVERSE_OPERATION = "REVERSE";
 
     private final WebClient omnistackWebClient;
     private final AppProperties appProperties;
@@ -49,9 +53,46 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort {
     public ExternalTransactionResponse recharge(Bet593RechargeCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
         Bet593RechargeRequest request = buildExternalRequest(command, provider);
+        return invokeLoteria(operationPath, provider, request, "recharge", "recarga BET593");
+    }
+
+    /**
+     * Ejecuta el consumo externo de validacion de recarga BET593.
+     *
+     * @param command request interno normalizado para la validacion
+     * @param operationPath ruta configurada del endpoint externo
+     * @return respuesta normalizada del proveedor
+     */
+    @Override
+    public ExternalTransactionResponse validateRecharge(Bet593RechargeCommand command, String operationPath) {
+        AppProperties.ProviderProperties provider = getProviderProperties();
+        Bet593RechargeRequest request = buildExternalValidationRequest(command, provider);
+        return invokeLoteria(operationPath, provider, request, "validate recharge", "validacion de recarga BET593");
+    }
+
+    /**
+     * Ejecuta el consumo externo de reverso de recarga BET593.
+     *
+     * @param command request interno normalizado para el reverso
+     * @param operationPath ruta configurada del endpoint externo
+     * @return respuesta normalizada del proveedor
+     */
+    @Override
+    public ExternalTransactionResponse reverseRecharge(Bet593RechargeCommand command, String operationPath) {
+        AppProperties.ProviderProperties provider = getProviderProperties();
+        Bet593RechargeReverseRequest request = buildExternalReverseRequest(command, provider);
+        return invokeLoteria(operationPath, provider, request, "reverse recharge", "reverso de recarga BET593");
+    }
+
+    private ExternalTransactionResponse invokeLoteria(
+            String operationPath,
+            AppProperties.ProviderProperties provider,
+            Object request,
+            String logOperation,
+            String errorOperation) {
         String url = resolveUrl(provider.getBaseUrl(), operationPath);
 
-        traceToConsole("Loteria BET593 recharge request", url, JsonUtil.toJsonSilently(request));
+        traceToConsole("Loteria BET593 " + logOperation + " request", url, JsonUtil.toJsonSilently(request));
 
         Bet593RechargeResponse response;
         try {
@@ -63,22 +104,22 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort {
                     .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                             .defaultIfEmpty("")
                             .flatMap(body -> {
-                                traceErrorToConsole("Loteria BET593 recharge error", url, body);
-                                return Mono.error(new IntegrationException(buildErrorMessage(body)));
+                                traceErrorToConsole("Loteria BET593 " + logOperation + " error", url, body);
+                                return Mono.error(new IntegrationException(buildErrorMessage(body, errorOperation)));
                             }))
                     .bodyToMono(String.class)
                     .map(this::parseResponseBody)
                     .block();
         } catch (WebClientRequestException exception) {
-            traceErrorToConsole("Loteria BET593 recharge transport error", url, rootCauseMessage(exception));
-            throw new IntegrationException(buildTransportErrorMessage(url, exception), exception);
+            traceErrorToConsole("Loteria BET593 " + logOperation + " transport error", url, rootCauseMessage(exception));
+            throw new IntegrationException(buildTransportErrorMessage(url, exception, errorOperation), exception);
         }
 
         if (response == null) {
-            throw new IntegrationException("Loteria no retorno contenido para recarga BET593");
+            throw new IntegrationException("Loteria no retorno contenido para " + errorOperation);
         }
 
-        traceToConsole("Loteria BET593 recharge response", url, JsonUtil.toJsonSilently(response));
+        traceToConsole("Loteria BET593 " + logOperation + " response", url, JsonUtil.toJsonSilently(response));
 
         return ExternalTransactionResponse.builder()
                 .approved(!hasBusinessError(response))
@@ -111,6 +152,52 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort {
                 .build();
     }
 
+    private Bet593RechargeReverseRequest buildExternalReverseRequest(
+            Bet593RechargeCommand command,
+            AppProperties.ProviderProperties provider) {
+        validateReverseProviderConfiguration(provider);
+        String providerToken = providerTokenResolverUseCase.getToken(
+                command.getCategoryCode(),
+                command.getSubcategoryCode(),
+                provider.getServiceProviderCode());
+        String username = provider.getAuth().getLogin().getUsername();
+        AppProperties.ProviderOperationProperties operation = provider.getServices().get(REVERSE_OPERATION).getCashin();
+
+        return Bet593RechargeReverseRequest.builder()
+                .usuario(username)
+                .maquina(provider.getShopIp())
+                .operacion(requiredValue(operation.getName(), "operation.name"))
+                .token(providerToken)
+                .usuarioId(username)
+                .medioId(provider.getMedioId())
+                .clienteId(provider.getClienteId())
+                .numeroTransaccion(requiredValue(command.getUuid(), "uuid"))
+                .identificacion(requiredValue(command.getDocument(), "document"))
+                .motivo(requiredValue(command.getMotivo(), "motivo"))
+                .build();
+    }
+
+    private Bet593RechargeRequest buildExternalValidationRequest(
+            Bet593RechargeCommand command,
+            AppProperties.ProviderProperties provider) {
+        validateProviderConfiguration(provider);
+        String providerToken = providerTokenResolverUseCase.getToken(
+                command.getCategoryCode(),
+                command.getSubcategoryCode(),
+                provider.getServiceProviderCode());
+
+        return Bet593RechargeRequest.builder()
+                .usuario(provider.getAuth().getLogin().getUsername())
+                .token(providerToken)
+                .canal(provider.getCanal())
+                .medioId(provider.getMedioId())
+                .puntooperacionId(provider.getPuntoOperacionId())
+                .cuentaweb(requiredValue(command.getDocument(), "document"))
+                .recargaid(requiredValue(command.getAuthorization(), "authorization"))
+                .serialnumber(requiredValue(command.getSerialnumber(), "serialnumber"))
+                .build();
+    }
+
     private Map<String, Object> buildPayload(Bet593RechargeResponse response) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("error", hasBusinessError(response) ? 1 : 0);
@@ -123,6 +210,7 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort {
         payload.put("userid", null);
         payload.put("document", response.getCuentaweb());
         payload.put("amount", response.getValor());
+        payload.put("status", response.getEstado());
         payload.putAll(response.getRaw());
         return payload;
     }
@@ -139,27 +227,28 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort {
         return response.getMsgError() != null ? response.getMsgError() : "";
     }
 
-    private String buildErrorMessage(String body) {
+    private String buildErrorMessage(String body, String operation) {
         if (body == null || body.isBlank()) {
-            return "Error HTTP al invocar recarga BET593 de Loteria";
+            return "Error HTTP al invocar " + operation + " de Loteria";
         }
         try {
             Bet593RechargeResponse response = objectMapper.readValue(body, Bet593RechargeResponse.class);
-            return "Loteria recarga BET593 respondio con error: "
+            return "Loteria " + operation + " respondio con error: "
                     + defaultMessage(response.getMsgError(), JsonUtil.toJsonSilently(response.getRaw()));
         } catch (JsonProcessingException exception) {
-            return "Loteria recarga BET593 respondio con error no parseable";
+            return "Loteria " + operation + " respondio con error no parseable";
         }
     }
 
-    private String buildTransportErrorMessage(String url, WebClientRequestException exception) {
+    private String buildTransportErrorMessage(String url, WebClientRequestException exception, String operation) {
         if (hasCause(exception, "ReadTimeoutException")) {
-            return "Timeout al invocar recarga BET593 de Loteria: " + url;
+            return "Timeout al invocar " + operation + " de Loteria: " + url;
         }
         if (hasCause(exception, "SSLHandshakeException") || hasCause(exception, "SunCertPathBuilderException")) {
-            return "Error SSL al invocar recarga BET593 de Loteria. Revise el certificado/truststore del contenedor para " + url;
+            return "Error SSL al invocar " + operation
+                    + " de Loteria. Revise el certificado/truststore del contenedor para " + url;
         }
-        return "Error de conexion al invocar recarga BET593 de Loteria: " + rootCauseMessage(exception);
+        return "Error de conexion al invocar " + operation + " de Loteria: " + rootCauseMessage(exception);
     }
 
     private boolean hasCause(Throwable exception, String simpleClassName) {
@@ -209,6 +298,28 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort {
         }
         if (provider.getPuntoOperacionId() == null) {
             throw new IntegrationException("Loteria BET593 requiere puntoOperacionId configurado");
+        }
+    }
+
+    private void validateReverseProviderConfiguration(AppProperties.ProviderProperties provider) {
+        if (provider.getAuth() == null || provider.getAuth().getLogin() == null
+                || provider.getAuth().getLogin().getUsername() == null
+                || provider.getAuth().getLogin().getUsername().isBlank()) {
+            throw new IntegrationException("Loteria BET593 requiere auth.login.username configurado");
+        }
+        if (provider.getShopIp() == null || provider.getShopIp().isBlank()) {
+            throw new IntegrationException("Loteria BET593 requiere shop-ip configurado para maquina");
+        }
+        if (provider.getClienteId() == null) {
+            throw new IntegrationException("Loteria BET593 requiere cliente-id configurado");
+        }
+        if (provider.getMedioId() == null) {
+            throw new IntegrationException("Loteria BET593 requiere medioId configurado");
+        }
+        if (provider.getServices() == null
+                || provider.getServices().get(REVERSE_OPERATION) == null
+                || provider.getServices().get(REVERSE_OPERATION).getCashin() == null) {
+            throw new IntegrationException("Loteria BET593 requiere operacion REVERSE cashin configurada");
         }
     }
 

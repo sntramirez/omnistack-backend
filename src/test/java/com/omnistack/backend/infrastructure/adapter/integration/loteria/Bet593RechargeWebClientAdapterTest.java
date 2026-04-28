@@ -1,6 +1,7 @@
 package com.omnistack.backend.infrastructure.adapter.integration.loteria;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -98,6 +99,121 @@ class Bet593RechargeWebClientAdapterTest {
     }
 
     @Test
+    void shouldSendBet593ValidationPayloadAndNormalizeCommitResponse() throws Exception {
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/APIVentasLoteria/api/Ventas/ValidarBet593", exchange -> respondJson(exchange,
+                """
+                {
+                  "usuario": "usrfemsaprep",
+                  "token": "token-dinamico",
+                  "operacion": "VALIDA593",
+                  "codError": 0,
+                  "msgError": "",
+                  "resultado": "0",
+                  "cuentaweb": "0901111112",
+                  "nombre": null,
+                  "apellido": null,
+                  "tipoDocumento": null,
+                  "valor": null,
+                  "fecharecarga": null,
+                  "recargaid": null,
+                  "serialnumber": null,
+                  "estado": "COMMIT"
+                }
+                """));
+        server.start();
+
+        Bet593RechargeWebClientAdapter adapter = new Bet593RechargeWebClientAdapter(
+                WebClient.builder().build(),
+                appProperties("http://localhost:" + server.getAddress().getPort()),
+                new ObjectMapper(),
+                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-dinamico");
+
+        var response = adapter.validateRecharge(Bet593RechargeCommand.builder()
+                .uuid("uuid-bet593")
+                .categoryCode("1")
+                .subcategoryCode("1")
+                .serviceProviderCode("2")
+                .authorization("9F968187-F436-4F19-8C1F-A7A4DA07A899")
+                .serialnumber("7366ea56284a06a2")
+                .document("0901111112")
+                .build(), "/APIVentasLoteria/api/Ventas/ValidarBet593");
+
+        assertEquals("/APIVentasLoteria/api/Ventas/ValidarBet593", capturedPath.get());
+        assertTrue(capturedBody.get().contains("\"usuario\":\"USRFEMSAPREP\""));
+        assertTrue(capturedBody.get().contains("\"token\":\"token-dinamico\""));
+        assertTrue(capturedBody.get().contains("\"canal\":\"BMV\""));
+        assertTrue(capturedBody.get().contains("\"medioId\":23"));
+        assertTrue(capturedBody.get().contains("\"puntooperacionId\":52132"));
+        assertTrue(capturedBody.get().contains("\"cuentaweb\":\"0901111112\""));
+        assertTrue(capturedBody.get().contains("\"recargaid\":\"9F968187-F436-4F19-8C1F-A7A4DA07A899\""));
+        assertTrue(capturedBody.get().contains("\"serialnumber\":\"7366ea56284a06a2\""));
+        assertFalse(capturedBody.get().contains("\"valor\""));
+        assertFalse(capturedBody.get().contains("\"codigotrn\""));
+        assertTrue(response.isApproved());
+        assertEquals("0", response.getExternalCode());
+        assertEquals("0901111112", String.valueOf(response.getPayload().get("document")));
+        assertEquals("COMMIT", String.valueOf(response.getPayload().get("status")));
+    }
+
+    @Test
+    void shouldSendBet593RechargeReversePayloadAndNormalizeBusinessError() throws Exception {
+        server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/APIVentasLoteria/api/Ventas/ReversarRetiroBet593", exchange -> respondJson(exchange,
+                """
+                {
+                  "usuario": "USRFEMSAPREP",
+                  "token": "78611427112026090453786114275309",
+                  "operacion": "REVRETIROOL",
+                  "codError": 400066,
+                  "msgError": "Tiempo excedido para realizar un reverso de recarga",
+                  "resultado": null,
+                  "cuentaweb": null,
+                  "nombre": null,
+                  "apellido": null,
+                  "tipoDocumento": null,
+                  "valor": null,
+                  "fecharecarga": null,
+                  "recargaid": null,
+                  "serialnumber": null,
+                  "estado": null
+                }
+                """));
+        server.start();
+
+        Bet593RechargeWebClientAdapter adapter = new Bet593RechargeWebClientAdapter(
+                WebClient.builder().build(),
+                appProperties("http://localhost:" + server.getAddress().getPort()),
+                new ObjectMapper(),
+                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-dinamico");
+
+        var response = adapter.reverseRecharge(Bet593RechargeCommand.builder()
+                .uuid("ca9b201a-a668-45ed-876c-00affcb18580")
+                .categoryCode("1")
+                .subcategoryCode("1")
+                .serviceProviderCode("2")
+                .document("0901111112")
+                .motivo("Demora en obtener respuesta")
+                .build(), "/APIVentasLoteria/api/Ventas/ReversarRetiroBet593");
+
+        assertEquals("/APIVentasLoteria/api/Ventas/ReversarRetiroBet593", capturedPath.get());
+        assertTrue(capturedBody.get().contains("\"usuario\":\"USRFEMSAPREP\""));
+        assertTrue(capturedBody.get().contains("\"maquina\":\"192.168.3.230\""));
+        assertTrue(capturedBody.get().contains("\"operacion\":\"REVRETIROOL\""));
+        assertTrue(capturedBody.get().contains("\"token\":\"token-dinamico\""));
+        assertTrue(capturedBody.get().contains("\"usuarioId\":\"USRFEMSAPREP\""));
+        assertTrue(capturedBody.get().contains("\"medioId\":23"));
+        assertTrue(capturedBody.get().contains("\"clienteId\":58542"));
+        assertTrue(capturedBody.get().contains("\"numeroTransaccion\":\"ca9b201a-a668-45ed-876c-00affcb18580\""));
+        assertTrue(capturedBody.get().contains("\"identificacion\":\"0901111112\""));
+        assertTrue(capturedBody.get().contains("\"motivo\":\"Demora en obtener respuesta\""));
+        assertFalse(response.isApproved());
+        assertEquals("400066", response.getExternalCode());
+        assertEquals("Tiempo excedido para realizar un reverso de recarga", response.getExternalMessage());
+    }
+
+
+    @Test
     void shouldConvertReadTimeoutIntoIntegrationException() throws Exception {
         server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/APIVentasLoteria/api/Ventas/RecargarBet593", exchange -> {
@@ -158,7 +274,12 @@ class Bet593RechargeWebClientAdapterTest {
         provider.setCanal("BMV");
         provider.setMedioId(23);
         provider.setPuntoOperacionId(52132);
+        provider.setShopIp("192.168.3.230");
+        provider.setClienteId(58542);
         provider.getAuth().getLogin().setUsername("USRFEMSAPREP");
+        AppProperties.ProviderCapabilityProperties reverseCapabilityProperties = new AppProperties.ProviderCapabilityProperties();
+        reverseCapabilityProperties.getCashin().setName("REVRETIROOL");
+        provider.getServices().put("REVERSE", reverseCapabilityProperties);
 
         AppProperties appProperties = new AppProperties();
         appProperties.getIntegration().getProviders().put("loteria", provider);

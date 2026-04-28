@@ -26,6 +26,13 @@ public final class ResponseFactory {
     private ResponseFactory() {
     }
 
+    /**
+     * Construye la respuesta de lineas de negocio.
+     *
+     * @param request request original de consulta
+     * @param collectionSubcategory subcategorias comerciales agrupadas
+     * @return respuesta consolidada de lineas de negocio
+     */
     public static BusinessLinesResponse businessLines(
             BusinessLinesRequest request,
             java.util.List<BusinessLineCollectionSubcategoryResponse> collectionSubcategory) {
@@ -39,6 +46,15 @@ public final class ResponseFactory {
                 .build();
     }
 
+    /**
+     * Construye una respuesta transaccional segun la capacidad procesada.
+     *
+     * @param request request transaccional original
+     * @param externalResponse respuesta canonica del proveedor
+     * @param capability capacidad procesada
+     * @return respuesta transaccional interna
+     * @throws IllegalArgumentException cuando la capacidad no esta soportada por la fabrica
+     */
     public static BaseTransactionResponse transactionResponse(
             BaseTransactionRequest request,
             ExternalTransactionResponse externalResponse,
@@ -47,22 +63,16 @@ public final class ResponseFactory {
             case PRECHECK -> precheckResponse(request, externalResponse);
             case EXECUTE -> ExecuteResponse.builder()
                     .uuid(request.getUuid())
-                    .providerCode(externalResponse.getExternalCode())
-                    .providerMessage(externalResponse.getExternalMessage())
                     .errorFlag(false)
                     .status(new StatusDetail(StatusCodes.SUCCESS, capability.name() + " completado correctamente"))
                     .build();
             case VERIFY -> VerifyResponse.builder()
                     .uuid(request.getUuid())
-                    .providerCode(externalResponse.getExternalCode())
-                    .providerMessage(externalResponse.getExternalMessage())
                     .errorFlag(false)
                     .status(new StatusDetail(StatusCodes.SUCCESS, capability.name() + " completado correctamente"))
                     .build();
             case REVERSE -> ReverseResponse.builder()
                     .uuid(request.getUuid())
-                    .providerCode(externalResponse.getExternalCode())
-                    .providerMessage(externalResponse.getExternalMessage())
                     .errorFlag(false)
                     .status(new StatusDetail(StatusCodes.SUCCESS, capability.name() + " completado correctamente"))
                     .build();
