@@ -135,6 +135,23 @@ public class AppProperties {
         private Integer medioId;
         private Integer puntoOperacionId;
         private Integer clienteId;
+        // CLARO-specific fields
+        private String companyId;
+        private String consumerId;
+        private String channelId;
+        private String mediaId;
+        private String mediaDetailId;
+        private String externalOperation;
+        private String subscriberType;
+        private String subscriptionType;
+        private String codCaja;
+        private String codSite;
+        private String latitude;
+        private String longitude;
+        private String canton;
+        private String province;
+        private String parish;
+        private Map<String, String> offerIds = new HashMap<>();
         private ProviderTokenProperties auth = new ProviderTokenProperties();
         private Map<String, ProviderCapabilityProperties> services = new HashMap<>();
     }

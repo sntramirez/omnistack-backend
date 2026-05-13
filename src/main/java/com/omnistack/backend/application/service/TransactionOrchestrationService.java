@@ -1,6 +1,8 @@
 package com.omnistack.backend.application.service;
 
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
+import com.omnistack.backend.application.dto.CreateTicketRequest;
+import com.omnistack.backend.application.dto.CreateTicketResponse;
 import com.omnistack.backend.application.dto.ExecuteRequest;
 import com.omnistack.backend.application.dto.ExecuteResponse;
 import com.omnistack.backend.application.dto.PrecheckRequest;
@@ -47,6 +49,11 @@ public class TransactionOrchestrationService implements TransactionUseCase {
     @Override
     public ReverseResponse reverse(ReverseRequest request) {
         return (ReverseResponse) process(request, Capability.REVERSE, "/v1/reverse");
+    }
+
+    @Override
+    public CreateTicketResponse createTicket(CreateTicketRequest request) {
+        return (CreateTicketResponse) process(request, Capability.CREATE_TICKET, "/v1/createTicket");
     }
 
     private Object process(BaseTransactionRequest request, Capability capability, String endpoint) {

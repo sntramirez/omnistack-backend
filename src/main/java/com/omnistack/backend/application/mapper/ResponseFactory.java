@@ -5,6 +5,7 @@ import com.omnistack.backend.application.dto.BaseTransactionResponse;
 import com.omnistack.backend.application.dto.BusinessLineCollectionSubcategoryResponse;
 import com.omnistack.backend.application.dto.BusinessLinesRequest;
 import com.omnistack.backend.application.dto.BusinessLinesResponse;
+import com.omnistack.backend.application.dto.CreateTicketResponse;
 import com.omnistack.backend.application.dto.ErrorDetail;
 import com.omnistack.backend.application.dto.ExecuteResponse;
 import com.omnistack.backend.application.dto.PrecheckResponse;
@@ -75,6 +76,11 @@ public final class ResponseFactory {
                     .status(new StatusDetail(StatusCodes.SUCCESS, capability.name() + " completado correctamente"))
                     .build();
             case REVERSE -> ReverseResponse.builder()
+                    .uuid(request.getUuid())
+                    .errorFlag(false)
+                    .status(new StatusDetail(StatusCodes.SUCCESS, capability.name() + " completado correctamente"))
+                    .build();
+            case CREATE_TICKET -> CreateTicketResponse.builder()
                     .uuid(request.getUuid())
                     .errorFlag(false)
                     .status(new StatusDetail(StatusCodes.SUCCESS, capability.name() + " completado correctamente"))

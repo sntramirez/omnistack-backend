@@ -30,6 +30,10 @@ public final class ApiPaths {
      */
     public static final String V1_REVERSE = "/v1/reverse";
     /**
+     * Endpoint de creacion de ticket de apuesta (Pega3).
+     */
+    public static final String V1_CREATE_TICKET = "/v1/createTicket";
+    /**
      * Endpoint de refresco manual de token de proveedor.
      */
     public static final String V1_PROVIDER_TOKEN_REFRESH = "/v1/provider-token/refresh";
