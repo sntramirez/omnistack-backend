@@ -8,6 +8,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.EcuabetDepositReversePort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ReverseStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -32,6 +33,7 @@ public class EcuabetDepositReverseStrategy extends AbstractProviderStrategy impl
 
     private final EcuabetDepositReversePort ecuabetDepositReversePort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -41,7 +43,7 @@ public class EcuabetDepositReverseStrategy extends AbstractProviderStrategy impl
                 && serviceDefinition.getMovementType() == MovementType.CASH_IN
                 && serviceDefinition.getServiceProviderCode() != null
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -51,7 +53,7 @@ public class EcuabetDepositReverseStrategy extends AbstractProviderStrategy impl
             Capability capability) {
         AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
         validateRequest(request, serviceDefinition, provider);
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
         Integer transactionId = parseTransactionId(request.getAuthorization());
 
         EcuabetDepositCommand command = EcuabetDepositCommand.builder()
@@ -72,7 +74,7 @@ public class EcuabetDepositReverseStrategy extends AbstractProviderStrategy impl
                 .transactionId(transactionId)
                 .build();
 
-        ExternalTransactionResponse externalResponse = ecuabetDepositReversePort.reverseDeposit(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = ecuabetDepositReversePort.reverseDeposit(command, operationUrl);
         return buildResponse(request, externalResponse, transactionId);
     }
 

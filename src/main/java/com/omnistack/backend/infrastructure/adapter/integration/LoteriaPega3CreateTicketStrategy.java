@@ -9,6 +9,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.Pega3CreateTicketPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.CreateTicketStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -35,6 +36,7 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
 
     private final Pega3CreateTicketPort pega3CreateTicketPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -46,7 +48,7 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -64,7 +66,7 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
             throw new IntegrationException("Pega3 requiere ticket_data para crear ticket");
         }
 
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         List<Pega3Panel> panels = buildDomainPanels(createTicketRequest.getTicketData().getPanels());
 
@@ -85,7 +87,7 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
                 .panels(panels)
                 .build();
 
-        ExternalTransactionResponse externalResponse = pega3CreateTicketPort.createTicket(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = pega3CreateTicketPort.createTicket(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

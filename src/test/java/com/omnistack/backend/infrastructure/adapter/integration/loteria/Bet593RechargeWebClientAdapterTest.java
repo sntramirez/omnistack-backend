@@ -79,7 +79,7 @@ class Bet593RechargeWebClientAdapterTest {
                 .serialnumber("7366ea56284a06a2")
                 .document("0901111112")
                 .amount(new BigDecimal("10"))
-                .build(), "/APIVentasLoteria/api/Ventas/RecargarBet593");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/APIVentasLoteria/api/Ventas/RecargarBet593");
 
         assertEquals("/APIVentasLoteria/api/Ventas/RecargarBet593", capturedPath.get());
         assertTrue(capturedBody.get().contains("\"usuario\":\"USRFEMSAPREP\""));
@@ -138,7 +138,7 @@ class Bet593RechargeWebClientAdapterTest {
                 .authorization("9F968187-F436-4F19-8C1F-A7A4DA07A899")
                 .serialnumber("7366ea56284a06a2")
                 .document("0901111112")
-                .build(), "/APIVentasLoteria/api/Ventas/ValidarBet593");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/APIVentasLoteria/api/Ventas/ValidarBet593");
 
         assertEquals("/APIVentasLoteria/api/Ventas/ValidarBet593", capturedPath.get());
         assertTrue(capturedBody.get().contains("\"usuario\":\"USRFEMSAPREP\""));
@@ -205,7 +205,7 @@ class Bet593RechargeWebClientAdapterTest {
                 .serviceProviderCode("2")
                 .document("0901111112")
                 .amount(new BigDecimal("10"))
-                .build(), "/APIVentasLoteria/api/Ventas/RecargarBet593");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/APIVentasLoteria/api/Ventas/RecargarBet593");
 
         assertEquals(2, requestCount.get());
         assertTrue(capturedBody.get().contains("\"token\":\"token-regenerado\""));
@@ -252,7 +252,7 @@ class Bet593RechargeWebClientAdapterTest {
                 .serviceProviderCode("2")
                 .document("0901111112")
                 .motivo("Demora en obtener respuesta")
-                .build(), "/APIVentasLoteria/api/Ventas/ReversarRetiroBet593");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/APIVentasLoteria/api/Ventas/ReversarRetiroBet593");
 
         assertEquals("/APIVentasLoteria/api/Ventas/ReversarRetiroBet593", capturedPath.get());
         assertTrue(capturedBody.get().contains("\"usuario\":\"USRFEMSAPREP\""));
@@ -303,7 +303,7 @@ class Bet593RechargeWebClientAdapterTest {
                         .document("0901111112")
                         .amount(new BigDecimal("9.99"))
                         .build(),
-                "/APIVentasLoteria/api/Ventas/RecargarBet593"));
+                "http://localhost:" + server.getAddress().getPort() + "/APIVentasLoteria/api/Ventas/RecargarBet593"));
 
         assertTrue(exception.getMessage().contains("Timeout al invocar recarga BET593"));
     }
@@ -325,7 +325,6 @@ class Bet593RechargeWebClientAdapterTest {
 
     private AppProperties appProperties(String baseUrl) {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
-        provider.setBaseUrl(baseUrl);
         provider.setCategoryCode("1");
         provider.setSubcategoryCode("1");
         provider.setServiceProviderCode("2");
@@ -335,25 +334,31 @@ class Bet593RechargeWebClientAdapterTest {
         provider.setShopIp("192.168.3.230");
         provider.setClienteId(58542);
         provider.getAuth().getLogin().setUsername("USRFEMSAPREP");
-        AppProperties.ProviderCapabilityProperties reverseCapabilityProperties = new AppProperties.ProviderCapabilityProperties();
-        reverseCapabilityProperties.getCashin().setName("REVRETIROOL");
-        provider.getServices().put("REVERSE", reverseCapabilityProperties);
 
         AppProperties appProperties = new AppProperties();
         appProperties.getIntegration().getProviders().put("loteria", provider);
         return appProperties;
     }
 
-    private record ProviderTokenResolverUseCaseStub(String token, String refreshedToken)
+    private static class ProviderTokenResolverUseCaseStub
             implements com.omnistack.backend.application.port.in.ProviderTokenResolverUseCase {
+
+        private String currentToken;
+        private final String refreshedToken;
+
+        ProviderTokenResolverUseCaseStub(String token, String refreshedToken) {
+            this.currentToken = token;
+            this.refreshedToken = refreshedToken;
+        }
 
         @Override
         public String getToken(String categoryCode, String subcategoryCode, String serviceProviderCode) {
-            return token;
+            return currentToken;
         }
 
         @Override
         public String refreshToken(String categoryCode, String subcategoryCode, String serviceProviderCode) {
+            currentToken = refreshedToken;
             return refreshedToken;
         }
     }

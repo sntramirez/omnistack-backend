@@ -76,7 +76,7 @@ class EcuabetDepositWebClientAdapterTest {
                 .document("0912345678")
                 .amount(new BigDecimal("100000.00"))
                 .transactionId(91081)
-                .build(), "/user/deposit");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/user/deposit");
 
         assertEquals("/user/deposit", capturedPath.get());
         assertEquals("1", capturedChain.get());
@@ -120,7 +120,6 @@ class EcuabetDepositWebClientAdapterTest {
 
     private AppProperties appProperties(String baseUrl) {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
-        provider.setBaseUrl(baseUrl);
         provider.setShopId("998739");
         provider.setShopIp("10.0.0.10");
         provider.setCountry(66);

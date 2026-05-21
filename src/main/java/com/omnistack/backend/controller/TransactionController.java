@@ -4,6 +4,7 @@ import com.omnistack.backend.application.dto.CreateTicketRequest;
 import com.omnistack.backend.application.dto.CreateTicketResponse;
 import com.omnistack.backend.application.dto.ExecuteRequest;
 import com.omnistack.backend.application.dto.ExecuteResponse;
+import com.omnistack.backend.application.dto.ErrorDetail;
 import com.omnistack.backend.application.dto.ErrorResponse;
 import com.omnistack.backend.application.dto.PrecheckRequest;
 import com.omnistack.backend.application.dto.PrecheckResponse;

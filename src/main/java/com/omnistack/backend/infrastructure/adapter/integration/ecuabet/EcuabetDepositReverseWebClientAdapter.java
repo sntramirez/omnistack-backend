@@ -49,7 +49,7 @@ public class EcuabetDepositReverseWebClientAdapter implements EcuabetDepositReve
     public ExternalTransactionResponse reverseDeposit(EcuabetDepositCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
         EcuabetDepositReverseRequest request = buildExternalRequest(command, provider);
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
 
         traceToConsole("ECUABET deposit reverse request", url, JsonUtil.toJsonSilently(request));
 
@@ -184,16 +184,6 @@ public class EcuabetDepositReverseWebClientAdapter implements EcuabetDepositReve
             throw new IntegrationException("ECUABET requiere transactionId para reverso de deposito");
         }
         return command.getTransactionId();
-    }
-
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {

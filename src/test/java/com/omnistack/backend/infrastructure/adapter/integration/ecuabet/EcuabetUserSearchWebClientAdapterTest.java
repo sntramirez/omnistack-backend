@@ -70,7 +70,7 @@ class EcuabetUserSearchWebClientAdapterTest {
                 .movementType(MovementType.CASH_OUT)
                 .withdrawId("7667")
                 .password("88422")
-                .build(), "/user/searchwithdraw");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/user/searchwithdraw");
 
         assertEquals("/user/searchwithdraw", capturedPath.get());
         assertEquals("1", capturedChain.get());
@@ -114,7 +114,7 @@ class EcuabetUserSearchWebClientAdapterTest {
                 .categoryCode("1")
                 .subcategoryCode("1")
                 .document("2912912912")
-                .build(), "/user/search");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/user/search");
 
         assertFalse(response.isApproved());
         assertEquals("02", response.getExternalCode());
@@ -153,7 +153,7 @@ class EcuabetUserSearchWebClientAdapterTest {
                 .categoryCode("1")
                 .subcategoryCode("1")
                 .document("2912912912")
-                .build(), "/user/search");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/user/search");
 
         assertFalse(response.isApproved());
         assertEquals("02", response.getExternalCode());
@@ -190,7 +190,7 @@ class EcuabetUserSearchWebClientAdapterTest {
                 .categoryCode("1")
                 .subcategoryCode("1")
                 .document("2912912912")
-                .build(), "/user/search-1");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/user/search-1");
 
         assertFalse(response.isApproved());
         assertEquals("0", response.getExternalCode());
@@ -220,7 +220,6 @@ class EcuabetUserSearchWebClientAdapterTest {
 
     private AppProperties appProperties(String baseUrl) {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
-        provider.setBaseUrl(baseUrl);
         provider.setShopId("998739");
         provider.setCountry(66);
         provider.setServiceProviderCode("1");

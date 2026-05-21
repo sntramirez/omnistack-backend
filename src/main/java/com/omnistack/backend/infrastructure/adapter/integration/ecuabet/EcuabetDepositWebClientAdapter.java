@@ -51,7 +51,7 @@ public class EcuabetDepositWebClientAdapter implements EcuabetDepositPort {
     public ExternalTransactionResponse deposit(EcuabetDepositCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
         EcuabetDepositRequest request = buildExternalRequest(command, provider);
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
 
         traceToConsole("ECUABET deposit request", url, JsonUtil.toJsonSilently(request));
 
@@ -210,16 +210,6 @@ public class EcuabetDepositWebClientAdapter implements EcuabetDepositPort {
         } catch (UnknownHostException exception) {
             throw new IntegrationException("ECUABET no pudo resolver shop_ip local", exception);
         }
-    }
-
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {

@@ -51,7 +51,7 @@ public class EcuabetWithdrawWebClientAdapter implements EcuabetWithdrawPort {
     public ExternalTransactionResponse withdraw(EcuabetWithdrawCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
         EcuabetWithdrawRequest request = buildExternalRequest(command, provider);
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
 
         traceToConsole("ECUABET withdraw request", url, JsonUtil.toJsonSilently(request));
 
@@ -190,16 +190,6 @@ public class EcuabetWithdrawWebClientAdapter implements EcuabetWithdrawPort {
         } catch (UnknownHostException exception) {
             throw new IntegrationException("ECUABET no pudo resolver shop_ip local", exception);
         }
-    }
-
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {

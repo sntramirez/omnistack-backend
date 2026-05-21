@@ -186,7 +186,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             String xmlBody,
             String logOperation,
             String errorOperation) {
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
         log.info("CLARO {} request url={} body={}", logOperation, url, xmlBody);
         System.out.println("CLARO " + logOperation + " request url=" + url + " body=" + xmlBody);
 
@@ -240,15 +240,6 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         return provider;
     }
 
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
-    }
 
     private String rootCauseMessage(Throwable exception) {
         Throwable current = exception;

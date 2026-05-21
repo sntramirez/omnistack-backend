@@ -10,10 +10,12 @@ import com.omnistack.backend.domain.enums.ChannelPos;
 import com.omnistack.backend.domain.enums.MovementType;
 import com.omnistack.backend.domain.model.CatalogSnapshot;
 import com.omnistack.backend.domain.model.ServiceDefinition;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.infrastructure.adapter.integration.DefaultProviderTransactionStrategy;
 import com.omnistack.backend.infrastructure.adapter.integration.LoteriaBet593PrecheckStrategy;
 import com.omnistack.backend.infrastructure.adapter.integration.MockExternalProviderClient;
 import com.omnistack.backend.shared.exception.CatalogNotFoundException;
+import org.mockito.Mockito;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -97,14 +99,17 @@ class DefaultProviderFlowResolverTest {
         provider.setServiceProviderCode("2");
         AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
         capabilityProperties.getCashin().setItem("100708850");
-        capabilityProperties.getCashin().setPath("/APIVentasLoteria/api/Ventas/RecargarBet593");
         provider.getServices().put("PRECHECK", capabilityProperties);
         AppProperties appProperties = new AppProperties();
         appProperties.getIntegration().getProviders().put("loteria", provider);
 
+        ProviderWsService wsService = Mockito.mock(ProviderWsService.class);
+        Mockito.when(wsService.hasUrl("loteria", "PRECHECK.CASHIN")).thenReturn(true);
+
         LoteriaBet593PrecheckStrategy realStrategy = new LoteriaBet593PrecheckStrategy(
                 (command, operationPath) -> null,
-                appProperties);
+                appProperties,
+                wsService);
         DefaultProviderFlowResolver resolver = new DefaultProviderFlowResolver(
                 cacheService,
                 List.of(realStrategy, new DefaultProviderTransactionStrategy(new MockExternalProviderClient())));

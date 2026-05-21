@@ -293,7 +293,7 @@ public class TradicionalWebClientAdapter implements
     @Override
     public ExternalTransactionResponse generateComprobante(TradicionalVerifyCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
         String fullUrl = url + "?ventaId=" + command.getVentaId()
                 + "&idUsuario=" + encodeParam(command.getIdUsuario())
                 + "&puntoDeVenta=" + encodeParam(command.getPuntoDeVenta());
@@ -341,7 +341,7 @@ public class TradicionalWebClientAdapter implements
             Object request,
             String logOperation,
             String errorOperation) {
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
         log.info("Tradicionales {} request url={} body={}", logOperation, url, JsonUtil.toJsonSilently(request));
         System.out.println("Tradicionales " + logOperation + " request url=" + url
                 + " body=" + JsonUtil.toJsonSilently(request));
@@ -415,15 +415,6 @@ public class TradicionalWebClientAdapter implements
         return codError != null && "0".equals(String.valueOf(codError));
     }
 
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
-    }
 
     private String encodeParam(String value) {
         return value != null ? java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8) : "";

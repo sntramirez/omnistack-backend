@@ -8,6 +8,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.Pega3PayTicketPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ExecuteStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -31,6 +32,7 @@ public class LoteriaPega3ExecuteStrategy extends AbstractProviderStrategy implem
 
     private final Pega3PayTicketPort pega3PayTicketPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -42,7 +44,7 @@ public class LoteriaPega3ExecuteStrategy extends AbstractProviderStrategy implem
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -60,7 +62,7 @@ public class LoteriaPega3ExecuteStrategy extends AbstractProviderStrategy implem
             throw new IntegrationException("Pega3 requiere amount para EXECUTE");
         }
 
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         Pega3PayTicketCommand command = Pega3PayTicketCommand.builder()
                 .uuid(request.getUuid())
@@ -77,7 +79,7 @@ public class LoteriaPega3ExecuteStrategy extends AbstractProviderStrategy implem
                 .ticketNumber(request.getAuthorization())
                 .build();
 
-        ExternalTransactionResponse externalResponse = pega3PayTicketPort.payTicket(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = pega3PayTicketPort.payTicket(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

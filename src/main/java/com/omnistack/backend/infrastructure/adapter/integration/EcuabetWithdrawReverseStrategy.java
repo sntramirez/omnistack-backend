@@ -8,6 +8,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.EcuabetWithdrawReversePort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ReverseStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -32,6 +33,7 @@ public class EcuabetWithdrawReverseStrategy extends AbstractProviderStrategy imp
 
     private final EcuabetWithdrawReversePort ecuabetWithdrawReversePort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -41,7 +43,7 @@ public class EcuabetWithdrawReverseStrategy extends AbstractProviderStrategy imp
                 && serviceDefinition.getMovementType() == MovementType.CASH_OUT
                 && serviceDefinition.getServiceProviderCode() != null
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -51,7 +53,7 @@ public class EcuabetWithdrawReverseStrategy extends AbstractProviderStrategy imp
             Capability capability) {
         AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
         validateRequest(request, serviceDefinition, provider);
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
         Integer transactionId = requiredTransactionId(request);
 
         EcuabetWithdrawCommand command = EcuabetWithdrawCommand.builder()
@@ -74,7 +76,7 @@ public class EcuabetWithdrawReverseStrategy extends AbstractProviderStrategy imp
                 .transactionId(transactionId)
                 .build();
 
-        ExternalTransactionResponse externalResponse = ecuabetWithdrawReversePort.reverseWithdraw(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = ecuabetWithdrawReversePort.reverseWithdraw(command, operationUrl);
         return buildResponse(request, externalResponse, transactionId);
     }
 

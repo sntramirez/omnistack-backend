@@ -72,7 +72,7 @@ class EcuabetDepositReverseWebClientAdapterTest {
                 .document("0912345678")
                 .amount(new BigDecimal("100000.00"))
                 .transactionId(91081)
-                .build(), "/rollback/deposit");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/rollback/deposit");
 
         assertEquals("/rollback/deposit", capturedPath.get());
         assertEquals("1", capturedChain.get());
@@ -111,7 +111,6 @@ class EcuabetDepositReverseWebClientAdapterTest {
 
     private AppProperties appProperties(String baseUrl) {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
-        provider.setBaseUrl(baseUrl);
         provider.setShopId("998739");
         provider.setCountry(66);
         provider.setServiceProviderCode("1");

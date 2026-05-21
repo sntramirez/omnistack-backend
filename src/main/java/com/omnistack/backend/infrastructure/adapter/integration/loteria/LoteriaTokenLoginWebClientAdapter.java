@@ -40,9 +40,10 @@ public class LoteriaTokenLoginWebClientAdapter implements ProviderTokenLoginPort
         LoteriaLoginRequest request = LoteriaLoginRequest.builder()
                 .username(command.getUsername())
                 .password(command.getPassword())
+                .deviceId(command.getDeviceId())
                 .productToSell(command.getProductToSell())
                 .build();
-        String url = resolveUrl(command.getBaseUrl(), command.getPath());
+        String url = command.getLoginUrl();
 
         traceToConsole("Loteria token login request", url, JsonUtil.toJsonSilently(request));
 
@@ -84,16 +85,6 @@ public class LoteriaTokenLoginWebClientAdapter implements ProviderTokenLoginPort
         return ProviderTokenLoginResult.builder()
                 .token(response.getToken())
                 .build();
-    }
-
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
     }
 
     private String buildErrorMessage(String providerName, String body) {

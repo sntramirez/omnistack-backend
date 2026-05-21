@@ -9,6 +9,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.Pega3CancelTicketPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ReverseStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -32,6 +33,7 @@ public class LoteriaPega3ReverseStrategy extends AbstractProviderStrategy implem
 
     private final Pega3CancelTicketPort pega3CancelTicketPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -43,7 +45,7 @@ public class LoteriaPega3ReverseStrategy extends AbstractProviderStrategy implem
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -63,7 +65,7 @@ public class LoteriaPega3ReverseStrategy extends AbstractProviderStrategy implem
             motivo = reverseRequest.getMotivo();
         }
 
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         Pega3CancelTicketCommand command = Pega3CancelTicketCommand.builder()
                 .uuid(request.getUuid())
@@ -80,7 +82,7 @@ public class LoteriaPega3ReverseStrategy extends AbstractProviderStrategy implem
                 .motivo(motivo)
                 .build();
 
-        ExternalTransactionResponse externalResponse = pega3CancelTicketPort.cancelTicket(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = pega3CancelTicketPort.cancelTicket(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

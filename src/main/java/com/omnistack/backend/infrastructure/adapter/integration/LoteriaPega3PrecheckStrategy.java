@@ -9,6 +9,7 @@ import com.omnistack.backend.application.port.out.Pega3DrawQueryPort;
 import com.omnistack.backend.application.port.out.Pega3ProductQueryPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -38,6 +39,7 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
     private final Pega3ProductQueryPort pega3ProductQueryPort;
     private final Pega3DrawQueryPort pega3DrawQueryPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -49,7 +51,7 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -59,9 +61,8 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
             Capability capability) {
         AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
-        AppProperties.ProviderOperationProperties sorteoOperation = findOperationByKey(
-                provider, PRECHECK_SORTEO_KEY, serviceDefinition.getMovementType());
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
+        String sorteoUrl = providerWsService.findUrl(PROVIDER_KEY, toWsKey(PRECHECK_SORTEO_KEY, serviceDefinition.getMovementType())).orElse(null);
 
         Pega3ProductQueryCommand productCommand = Pega3ProductQueryCommand.builder()
                 .uuid(request.getUuid())
@@ -75,7 +76,7 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
                 .rmsItemCode(request.getRmsItemCode())
                 .build();
 
-        ExternalTransactionResponse productResponse = pega3ProductQueryPort.queryProduct(productCommand, operation.getPath());
+        ExternalTransactionResponse productResponse = pega3ProductQueryPort.queryProduct(productCommand, operationUrl);
 
         PrecheckResponse.GameData gameData = null;
         if (productResponse.isApproved()) {
@@ -88,7 +89,7 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
         }
 
         PrecheckResponse.ActiveDraw activeDraw = null;
-        if (sorteoOperation != null && sorteoOperation.getPath() != null && !sorteoOperation.getPath().isBlank()) {
+        if (sorteoUrl != null && !sorteoUrl.isBlank()) {
             Pega3DrawQueryCommand drawCommand = Pega3DrawQueryCommand.builder()
                     .uuid(request.getUuid())
                     .chain(request.getChain())
@@ -101,7 +102,7 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
                     .rmsItemCode(request.getRmsItemCode())
                     .build();
 
-            ExternalTransactionResponse drawResponse = pega3DrawQueryPort.queryActiveDraw(drawCommand, sorteoOperation.getPath());
+            ExternalTransactionResponse drawResponse = pega3DrawQueryPort.queryActiveDraw(drawCommand, sorteoUrl);
             if (drawResponse.isApproved()) {
                 Map<String, Object> drawPayload = drawResponse.getPayload();
                 activeDraw = PrecheckResponse.ActiveDraw.builder()

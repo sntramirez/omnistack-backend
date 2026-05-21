@@ -8,6 +8,7 @@ import com.omnistack.backend.application.dto.VerifyResponse;
 import com.omnistack.backend.application.port.out.Bet593WithdrawValidationPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -35,6 +36,7 @@ public class LoteriaBet593WithdrawVerifyStrategy extends AbstractProviderStrateg
 
     private final Bet593WithdrawValidationPort bet593WithdrawValidationPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -44,7 +46,7 @@ public class LoteriaBet593WithdrawVerifyStrategy extends AbstractProviderStrateg
                 && serviceDefinition.getMovementType() == MovementType.CASH_OUT
                 && serviceDefinition.getServiceProviderCode() != null
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -55,7 +57,7 @@ public class LoteriaBet593WithdrawVerifyStrategy extends AbstractProviderStrateg
         AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
         validateRequiredRequestFields(request);
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         Bet593WithdrawCommand command = Bet593WithdrawCommand.builder()
                 .uuid(request.getUuid())
@@ -78,7 +80,7 @@ public class LoteriaBet593WithdrawVerifyStrategy extends AbstractProviderStrateg
                 .amount(request.getAmount())
                 .build();
 
-        ExternalTransactionResponse externalResponse = bet593WithdrawValidationPort.validateWithdraw(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = bet593WithdrawValidationPort.validateWithdraw(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

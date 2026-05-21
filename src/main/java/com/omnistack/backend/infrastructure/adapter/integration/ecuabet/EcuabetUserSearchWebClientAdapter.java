@@ -45,7 +45,7 @@ public class EcuabetUserSearchWebClientAdapter implements EcuabetUserSearchPort 
     public ExternalTransactionResponse searchUser(EcuabetUserSearchCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
         EcuabetUserSearchRequest request = buildExternalRequest(command, provider);
-        String url = provider.getBaseUrl() + operationPath;
+        String url = operationPath;
         String operationName = resolveOperationName(operationPath);
 
         traceToConsole("External web service request", url, JsonUtil.toJsonSilently(request));

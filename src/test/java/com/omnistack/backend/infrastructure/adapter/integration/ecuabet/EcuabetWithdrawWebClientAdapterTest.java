@@ -74,7 +74,7 @@ class EcuabetWithdrawWebClientAdapterTest {
                 .document("0912345678")
                 .amount(new BigDecimal("25.50"))
                 .transactionId(10980)
-                .build(), "/user/withdraw");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/user/withdraw");
 
         assertEquals("/user/withdraw", capturedPath.get());
         assertEquals("1", capturedChain.get());
@@ -117,7 +117,6 @@ class EcuabetWithdrawWebClientAdapterTest {
 
     private AppProperties appProperties(String baseUrl) {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
-        provider.setBaseUrl(baseUrl);
         provider.setShopId("998739");
         provider.setShopIp("10.0.0.10");
         provider.setCountry(66);

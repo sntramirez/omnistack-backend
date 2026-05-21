@@ -86,27 +86,16 @@ public class Bet593WithdrawWebClientAdapter implements Bet593WithdrawPort, Bet59
             String operationKey,
             String traceLabel) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
-        Function<Boolean, Bet593WithdrawRequest> requestFactory =
-                forceRefreshToken -> buildExternalRequest(command, provider, operationKey, forceRefreshToken);
-        Bet593WithdrawRequest request = requestFactory.apply(false);
-        Bet593WithdrawResponse response;
-        try {
-            response = executeWithdrawRequest(request, url, traceLabel);
-        } catch (IntegrationException exception) {
-            if (!isInvalidTokenException(exception)) {
-                throw exception;
-            }
-            traceToConsole(traceLabel + " token refresh", url,
-                    "Token invalido detectado; regenerando token y reintentando");
-            request = requestFactory.apply(true);
-            response = executeWithdrawRequest(request, url, traceLabel + " retry");
-        }
+        Bet593WithdrawRequest request = buildExternalRequest(command, provider, operationKey);
+        String url = operationPath;
+        Bet593WithdrawResponse response = executeWithdrawRequest(request, url, traceLabel);
 
         if (isInvalidTokenResponse(response)) {
             traceToConsole(traceLabel + " token refresh", url,
                     "Token invalido detectado; regenerando token y reintentando");
-            request = requestFactory.apply(true);
+            providerTokenResolverUseCase.refreshToken(
+                    command.getCategoryCode(), command.getSubcategoryCode(), provider.getServiceProviderCode());
+            request = buildExternalRequest(command, provider, operationKey);
             response = executeWithdrawRequest(request, url, traceLabel + " retry");
         }
 
@@ -157,17 +146,18 @@ public class Bet593WithdrawWebClientAdapter implements Bet593WithdrawPort, Bet59
     private Bet593WithdrawRequest buildExternalRequest(
             Bet593WithdrawCommand command,
             AppProperties.ProviderProperties provider,
-            String operationKey,
-            boolean forceRefreshToken) {
-        validateProviderConfiguration(provider, operationKey);
-        String providerToken = resolveProviderToken(command, provider, forceRefreshToken);
+            String operationKey) {
+        validateProviderConfiguration(provider);
+        String providerToken = providerTokenResolverUseCase.getToken(
+                command.getCategoryCode(),
+                command.getSubcategoryCode(),
+                provider.getServiceProviderCode());
         String username = provider.getAuth().getLogin().getUsername();
-        AppProperties.ProviderOperationProperties operation = provider.getServices().get(operationKey).getCashout();
 
         return Bet593WithdrawRequest.builder()
                 .usuario(username)
                 .maquina(provider.getShopIp())
-                .operacion(requiredValue(operation.getName(), "operation.name"))
+                .operacion(resolveOperacionName(operationKey))
                 .token(providerToken)
                 .usuarioId(username)
                 .clienteId(provider.getClienteId())
@@ -332,7 +322,7 @@ public class Bet593WithdrawWebClientAdapter implements Bet593WithdrawPort, Bet59
         }
     }
 
-    private void validateProviderConfiguration(AppProperties.ProviderProperties provider, String operationKey) {
+    private void validateProviderConfiguration(AppProperties.ProviderProperties provider) {
         if (provider.getAuth() == null || provider.getAuth().getLogin() == null
                 || provider.getAuth().getLogin().getUsername() == null
                 || provider.getAuth().getLogin().getUsername().isBlank()) {
@@ -347,21 +337,15 @@ public class Bet593WithdrawWebClientAdapter implements Bet593WithdrawPort, Bet59
         if (provider.getMedioId() == null) {
             throw new IntegrationException("Loteria BET593 requiere medioId configurado");
         }
-        if (provider.getServices() == null
-                || provider.getServices().get(operationKey) == null
-                || provider.getServices().get(operationKey).getCashout() == null) {
-            throw new IntegrationException("Loteria BET593 requiere operacion " + operationKey + " cashout configurada");
-        }
     }
 
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
+    private String resolveOperacionName(String operationKey) {
+        return switch (operationKey) {
+            case EXECUTE_OPERATION -> "RETIROOL";
+            case VERIFY_OPERATION -> "CONRETIROOL";
+            case REVERSE_OPERATION -> "REVRETIROOL";
+            default -> throw new IntegrationException("Loteria BET593 operacion cashout desconocida: " + operationKey);
+        };
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {

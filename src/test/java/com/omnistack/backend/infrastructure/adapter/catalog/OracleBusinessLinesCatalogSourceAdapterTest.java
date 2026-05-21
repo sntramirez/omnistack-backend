@@ -115,27 +115,16 @@ class OracleBusinessLinesCatalogSourceAdapterTest {
 
         String inputFieldsSql = sqlProvider.getInputFieldsSql();
 
-        assertTrue(inputFieldsSql.contains("'100708846' as rms_item_code, 'withdrawId' as input_field_id"));
-        assertTrue(inputFieldsSql.contains(
-                "'100708846' as rms_item_code, 'password' as input_field_id, 'Contrase\u00f1a asignado a retiro' as label"));
-        assertTrue(inputFieldsSql.contains(
-                "'100708846' as rms_item_code, 'amount' as input_field_id, 'Monto' as label, "
-                        + "'DOUBLE' as field_type, 'PRECHECK' as capability_code, 1 as is_required, "
-                        + "'AMOUNT' as field_group"));
-        assertTrue(inputFieldsSql.contains("'PASS' as field_group"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708846' as rms_item_code, 'amount' as input_field_id, 'Monto reverso' as label"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708846' as rms_item_code, 'document' as input_field_id, 'Documento Usuario' as label, "
-                        + "'STRING' as field_type, 'REVERSE' as capability_code"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708846' as rms_item_code, 'motivo' as input_field_id, 'Motivo del reverso' as label"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708846' as rms_item_code, 'withdrawId' as input_field_id, 'Numero asignado a retiro' as label, "
-                        + "'STRING' as field_type, 'REVERSE' as capability_code"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708846' as rms_item_code, 'password' as input_field_id, 'Clave de retiro' as label, "
-                        + "'STRING' as field_type, 'REVERSE' as capability_code"));
+        assertTrue(inputFieldsSql.contains("FROM AD_ITEM_SERVICIO"));
+        assertTrue(inputFieldsSql.contains("WHERE CHANNEL_POS = :channel_pos"));
+        assertTrue(inputFieldsSql.contains("INPUT_FIELD_ID"));
+        // Orden personalizado para ecuabet cashout (100708846): withdrawId\u2192password\u2192amount
+        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708846' AND INPUT_FIELD_ID = 'withdrawId' THEN 1"));
+        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708846' AND INPUT_FIELD_ID = 'password'   THEN 2"));
+        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708846' AND INPUT_FIELD_ID = 'amount'     THEN 3"));
+        // No debe tener datos hardcodeados
+        assertFalse(inputFieldsSql.contains("FROM DUAL"));
+        assertFalse(inputFieldsSql.contains("UNION ALL"));
     }
 
     @Test
@@ -144,29 +133,14 @@ class OracleBusinessLinesCatalogSourceAdapterTest {
 
         String inputFieldsSql = sqlProvider.getInputFieldsSql();
 
-        assertTrue(inputFieldsSql.contains(
-                "'100708848' as rms_item_code, 'document' as input_field_id, 'Documento Usuario' as label, "
-                        + "'STRING' as field_type, 'EXECUTE' as capability_code"));
-        assertTrue(inputFieldsSql.contains(
-                "'100708848' as rms_item_code, 'withdrawId' as input_field_id, 'N\u00famero asignado a retiro' as label, "
-                        + "'STRING' as field_type, 'EXECUTE' as capability_code"));
-        assertTrue(inputFieldsSql.contains(
-                "'100708848' as rms_item_code, 'amount' as input_field_id, 'Monto' as label, "
-                        + "'DOUBLE' as field_type, 'EXECUTE' as capability_code, 1 as is_required, "
-                        + "'AMOUNT' as field_group"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708848' as rms_item_code, 'document' as input_field_id, 'Documento Usuario' as label, "
-                        + "'STRING' as field_type, 'VERIFY' as capability_code"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708848' as rms_item_code, 'withdrawId' as input_field_id, 'Numero asignado a retiro' as label, "
-                        + "'STRING' as field_type, 'VERIFY' as capability_code"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708848' as rms_item_code, 'authorization' as input_field_id, "
-                        + "'Numero de transaccion original' as label"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708848' as rms_item_code, 'document' as input_field_id, 'Documento Usuario' as label, "
-                        + "'STRING' as field_type, 'REVERSE' as capability_code"));
-        assertFalse(inputFieldsSql.contains(
-                "'100708848' as rms_item_code, 'motivo' as input_field_id, 'Motivo del reverso' as label"));
+        assertTrue(inputFieldsSql.contains("FROM AD_ITEM_SERVICIO"));
+        assertTrue(inputFieldsSql.contains("WHERE CHANNEL_POS = :channel_pos"));
+        // Orden personalizado para bet593 cashout (100708848): document\u2192withdrawId\u2192amount
+        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708848' AND INPUT_FIELD_ID = 'document'   THEN 1"));
+        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708848' AND INPUT_FIELD_ID = 'withdrawId' THEN 2"));
+        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708848' AND INPUT_FIELD_ID = 'amount'     THEN 3"));
+        // No debe tener datos hardcodeados
+        assertFalse(inputFieldsSql.contains("FROM DUAL"));
+        assertFalse(inputFieldsSql.contains("UNION ALL"));
     }
 }

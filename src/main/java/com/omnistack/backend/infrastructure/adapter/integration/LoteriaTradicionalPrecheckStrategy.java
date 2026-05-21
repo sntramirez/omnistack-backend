@@ -12,6 +12,7 @@ import com.omnistack.backend.application.port.out.TradicionalNumerosQueryPort;
 import com.omnistack.backend.application.port.out.TradicionalSorteosQueryPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -51,6 +52,7 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
     private final TradicionalFigurasQueryPort figurasQueryPort;
     private final TradicionalNumerosQueryPort numerosQueryPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -62,7 +64,7 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -73,10 +75,10 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
         AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
 
-        AppProperties.ProviderOperationProperties juegosOp = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
-        AppProperties.ProviderOperationProperties sorteosOp = findOperationByKey(provider, PRECHECK_SORTEOS_KEY, serviceDefinition.getMovementType());
-        AppProperties.ProviderOperationProperties figurasOp = findOperationByKey(provider, PRECHECK_FIGURAS_KEY, serviceDefinition.getMovementType());
-        AppProperties.ProviderOperationProperties numerosOp = findOperationByKey(provider, PRECHECK_NUMEROS_KEY, serviceDefinition.getMovementType());
+        String juegosUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
+        String sorteosUrl = providerWsService.findUrl(PROVIDER_KEY, toWsKey(PRECHECK_SORTEOS_KEY, serviceDefinition.getMovementType())).orElse(null);
+        String figurasUrl = providerWsService.findUrl(PROVIDER_KEY, toWsKey(PRECHECK_FIGURAS_KEY, serviceDefinition.getMovementType())).orElse(null);
+        String numerosUrl = providerWsService.findUrl(PROVIDER_KEY, toWsKey(PRECHECK_NUMEROS_KEY, serviceDefinition.getMovementType())).orElse(null);
 
         String gameId = null;
         String drawId = null;
@@ -102,11 +104,11 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                 .medioId(provider.getMedioId()).userName(provider.getAuth().getLogin().getUsername())
                 .build();
 
-        ExternalTransactionResponse juegosResponse = juegoQueryPort.queryJuegos(juegoCmd, juegosOp.getPath());
+        ExternalTransactionResponse juegosResponse = juegoQueryPort.queryJuegos(juegoCmd, juegosUrl);
 
         // Call 2: RecuperarSorteosDisponibles (if operation configured)
         ExternalTransactionResponse sorteosResponse = null;
-        if (sorteosOp != null && sorteosOp.getPath() != null && !sorteosOp.getPath().isBlank()) {
+        if (sorteosUrl != null && !sorteosUrl.isBlank()) {
             TradicionalSorteosQueryCommand sorteosCmd = TradicionalSorteosQueryCommand.builder()
                     .uuid(request.getUuid()).chain(request.getChain()).store(request.getStore())
                     .storeName(request.getStoreName()).pos(request.getPos())
@@ -116,12 +118,12 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                     .medioId(provider.getMedioId()).userName(provider.getAuth().getLogin().getUsername())
                     .juegoId(juegoId)
                     .build();
-            sorteosResponse = sorteosQueryPort.querySorteos(sorteosCmd, sorteosOp.getPath());
+            sorteosResponse = sorteosQueryPort.querySorteos(sorteosCmd, sorteosUrl);
         }
 
         // Call 3: RecuperarFigurasPorJuego (if operation configured)
         ExternalTransactionResponse figurasResponse = null;
-        if (figurasOp != null && figurasOp.getPath() != null && !figurasOp.getPath().isBlank()) {
+        if (figurasUrl != null && !figurasUrl.isBlank()) {
             TradicionalFigurasQueryCommand figurasCmd = TradicionalFigurasQueryCommand.builder()
                     .uuid(request.getUuid()).chain(request.getChain()).store(request.getStore())
                     .storeName(request.getStoreName()).pos(request.getPos())
@@ -131,12 +133,12 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                     .medioId(provider.getMedioId()).userName(provider.getAuth().getLogin().getUsername())
                     .juegoId(juegoId)
                     .build();
-            figurasResponse = figurasQueryPort.queryFiguras(figurasCmd, figurasOp.getPath());
+            figurasResponse = figurasQueryPort.queryFiguras(figurasCmd, figurasUrl);
         }
 
         // Call 4: RecuperarNumerosDisponiblesPorCombinacion (only if drawId is provided)
         ExternalTransactionResponse numerosResponse = null;
-        if (numerosOp != null && numerosOp.getPath() != null && !numerosOp.getPath().isBlank()
+        if (numerosUrl != null && !numerosUrl.isBlank()
                 && drawId != null && !drawId.isBlank()) {
             TradicionalNumerosQueryCommand numerosCmd = TradicionalNumerosQueryCommand.builder()
                     .uuid(request.getUuid()).chain(request.getChain()).store(request.getStore())
@@ -152,7 +154,7 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                     .cantidad(0)
                     .registros(registros != null ? registros : 10)
                     .build();
-            numerosResponse = numerosQueryPort.queryNumeros(numerosCmd, numerosOp.getPath());
+            numerosResponse = numerosQueryPort.queryNumeros(numerosCmd, numerosUrl);
         }
 
         return buildResponse(request, juegosResponse, sorteosResponse, figurasResponse, numerosResponse);

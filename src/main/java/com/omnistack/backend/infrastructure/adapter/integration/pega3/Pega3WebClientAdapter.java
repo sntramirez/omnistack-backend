@@ -61,10 +61,12 @@ public class Pega3WebClientAdapter implements
         Pega3CancelTicketPort {
 
     private static final String PROVIDER_KEY = "pega3";
-    private static final String GAME_CODE = "PEGA3";
+    private static final String GAME_CODE = "1001";
     private static final int ADVANCE_DRAW = 0;
     private static final int NO_OF_DRAWS = 1;
-    private static final String ENTRY_TYPE_REGULAR = "REGULAR";
+    private static final int ENTRY_TYPE_REGULAR = 1;
+    private static final int TYPE_OF_ENTRY_QUICK_PICK = 1;
+    private static final int TYPE_OF_ENTRY_MANUAL = 3;
 
     private final WebClient omnistackWebClient;
     private final AppProperties appProperties;
@@ -136,7 +138,7 @@ public class Pega3WebClientAdapter implements
         AppProperties.ProviderProperties provider = getProviderProperties();
         String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
         String productoVender = resolveProductoVender(provider);
-        String deviceId = requiredValue(provider.getShopId(), "shopId");
+        String deviceId = requiredValue(provider.getAuth().getLogin().getUsername(), "auth.login.username");
         String channel = resolveChannel(provider);
 
         Pega3CreateTicketRequest request = Pega3CreateTicketRequest.builder()
@@ -147,7 +149,7 @@ public class Pega3WebClientAdapter implements
                 .cost(command.getAmount())
                 .entryType(command.getEntryType())
                 .channel(channel)
-                .mainGame(buildMainGame(command, productoVender))
+                .mainGame(buildMainGame(command))
                 .build();
 
         Pega3CreateTicketResponse response = invokePega3(
@@ -177,7 +179,7 @@ public class Pega3WebClientAdapter implements
         AppProperties.ProviderProperties provider = getProviderProperties();
         String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
         String productoVender = resolveProductoVender(provider);
-        String deviceId = requiredValue(provider.getShopId(), "shopId");
+        String deviceId = requiredValue(provider.getAuth().getLogin().getUsername(), "auth.login.username");
 
         Pega3PayTicketRequest request = Pega3PayTicketRequest.builder()
                 .deviceId(deviceId)
@@ -246,7 +248,7 @@ public class Pega3WebClientAdapter implements
         AppProperties.ProviderProperties provider = getProviderProperties();
         String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
         String productoVender = resolveProductoVender(provider);
-        String deviceId = requiredValue(provider.getShopId(), "shopId");
+        String deviceId = requiredValue(provider.getAuth().getLogin().getUsername(), "auth.login.username");
 
         Pega3CancelTicketRequest request = Pega3CancelTicketRequest.builder()
                 .deviceId(deviceId)
@@ -282,7 +284,7 @@ public class Pega3WebClientAdapter implements
             Class<T> responseType,
             String logOperation,
             String errorOperation) {
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
         traceToConsole("Pega3 " + logOperation + " request", url, JsonUtil.toJsonSilently(request));
 
         T response;
@@ -315,14 +317,14 @@ public class Pega3WebClientAdapter implements
         return response;
     }
 
-    private Pega3CreateTicketRequest.MainGame buildMainGame(
-            Pega3CreateTicketCommand command,
-            String productoVender) {
+    private Pega3CreateTicketRequest.MainGame buildMainGame(Pega3CreateTicketCommand command) {
         List<Pega3CreateTicketRequest.Panel> externalPanels = new ArrayList<>();
-        for (Pega3Panel panel : command.getPanels()) {
-            String entryType = command.getEntryType();
-            boolean quickPick = "QUICK_PICK".equalsIgnoreCase(entryType);
+        String entryType = command.getEntryType();
+        boolean quickPick = entryType != null && entryType.toLowerCase().contains("quickpick");
+        int typeOfEntryInt = quickPick ? TYPE_OF_ENTRY_QUICK_PICK : TYPE_OF_ENTRY_MANUAL;
+        String betType = quickPick ? "QuickPick" : "Manual";
 
+        for (Pega3Panel panel : command.getPanels()) {
             Pega3CreateTicketRequest.Entry entry = Pega3CreateTicketRequest.Entry.builder()
                     .type(ENTRY_TYPE_REGULAR)
                     .quickPick(quickPick)
@@ -331,19 +333,19 @@ public class Pega3WebClientAdapter implements
                     .build();
 
             externalPanels.add(Pega3CreateTicketRequest.Panel.builder()
-                    .betType(panel.getPlayTypes() != null && !panel.getPlayTypes().isEmpty()
-                            ? panel.getPlayTypes().get(0) : "WIN")
-                    .typeOfEntry(entryType)
+                    .betType(betType)
+                    .typeOfEntry(typeOfEntryInt)
                     .betAmount(panel.getBetAmount())
                     .entries(List.of(entry))
                     .build());
         }
 
         return Pega3CreateTicketRequest.MainGame.builder()
-                .code(productoVender)
+                .code(GAME_CODE)
                 .advanceDraw(ADVANCE_DRAW)
                 .noOfDraws(NO_OF_DRAWS)
                 .panels(externalPanels)
+                .addOns(List.of())
                 .build();
     }
 
@@ -352,7 +354,11 @@ public class Pega3WebClientAdapter implements
             throw new IntegrationException("Pega3 no retorno contenido para " + operation);
         }
         try {
-            return objectMapper.readValue(body, type);
+            T result = objectMapper.readValue(body, type);
+            if (result == null) {
+                throw new IntegrationException("Pega3 " + operation + " retorno null — sorteo posiblemente invalido");
+            }
+            return result;
         } catch (JsonProcessingException exception) {
             throw new IntegrationException("Pega3 " + operation + " retorno un body no parseable");
         }
@@ -387,15 +393,6 @@ public class Pega3WebClientAdapter implements
         return message != null && !message.isBlank();
     }
 
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
-    }
 
     private String requiredValue(String value, String fieldName) {
         if (value == null || value.isBlank()) {

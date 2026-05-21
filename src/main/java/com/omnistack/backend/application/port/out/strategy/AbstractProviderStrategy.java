@@ -1,5 +1,6 @@
 package com.omnistack.backend.application.port.out.strategy;
 
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -50,104 +51,72 @@ public abstract class AbstractProviderStrategy implements TransactionFlowStrateg
     }
 
     /**
-     * Indica si el proveedor tiene configurada la operacion correspondiente a la capacidad y servicio dados.
+     * Indica si el proveedor tiene el item configurado y la URL en DB para la operacion dada.
+     * La URL se verifica contra IN_OMNI_PROVEEDOR_WS via ProviderWsService.
      *
-     * @param provider configuracion del proveedor
-     * @param capability capacidad transaccional
+     * @param provider          configuracion del proveedor
+     * @param providerWsService servicio de URLs desde DB
+     * @param providerKey       clave del proveedor en el mapa de integraciones
+     * @param capability        capacidad transaccional
      * @param serviceDefinition definicion comercial del servicio
-     * @return true si la operacion esta configurada y el item coincide con rms_item_code
+     * @return true si item coincide con rms_item_code y existe URL en DB
      */
     protected boolean hasConfiguredOperation(
             AppProperties.ProviderProperties provider,
+            ProviderWsService providerWsService,
+            String providerKey,
             Capability capability,
             ServiceDefinition serviceDefinition) {
         AppProperties.ProviderOperationProperties operation =
                 findOperation(provider, capability.name(), serviceDefinition.getMovementType());
+        String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
         return operation != null
-                && operation.getPath() != null
-                && !operation.getPath().isBlank()
                 && operation.getItem() != null
-                && operation.getItem().equalsIgnoreCase(serviceDefinition.getRmsItemCode());
+                && operation.getItem().equalsIgnoreCase(serviceDefinition.getRmsItemCode())
+                && providerWsService.hasUrl(providerKey, wsKey);
     }
 
     /**
-     * Devuelve la operacion configurada o lanza excepcion si no existe o no coincide el item.
+     * Valida que el item coincida y retorna la URL completa desde DB para la operacion.
      *
-     * @param provider configuracion del proveedor
-     * @param capability capacidad transaccional
+     * @param provider          configuracion del proveedor
+     * @param providerWsService servicio de URLs desde DB
+     * @param providerKey       clave del proveedor
+     * @param capability        capacidad transaccional
      * @param serviceDefinition definicion comercial del servicio
-     * @param providerName nombre legible para mensajes de error
-     * @return propiedades de la operacion configurada
-     * @throws IntegrationException si la ruta o el item no estan configurados
+     * @param providerName      nombre legible para mensajes de error
+     * @return URL completa del endpoint externo
+     * @throws IntegrationException si el item no coincide o no existe URL en DB
      */
-    protected AppProperties.ProviderOperationProperties getRequiredOperation(
+    protected String getRequiredOperationUrl(
             AppProperties.ProviderProperties provider,
+            ProviderWsService providerWsService,
+            String providerKey,
             Capability capability,
             ServiceDefinition serviceDefinition,
             String providerName) {
         AppProperties.ProviderOperationProperties operation =
                 findOperation(provider, capability.name(), serviceDefinition.getMovementType());
-        if (operation == null || operation.getPath() == null || operation.getPath().isBlank()) {
-            throw new IntegrationException(providerName + " no tiene ruta configurada para capability="
-                    + capability.name() + " y movement_type=" + serviceDefinition.getMovementType());
-        }
-        if (operation.getItem() == null || !operation.getItem().equalsIgnoreCase(serviceDefinition.getRmsItemCode())) {
+        if (operation == null || operation.getItem() == null
+                || !operation.getItem().equalsIgnoreCase(serviceDefinition.getRmsItemCode())) {
             throw new IntegrationException(providerName + " no tiene item configurado para rms_item_code="
                     + serviceDefinition.getRmsItemCode() + ", capability=" + capability.name()
                     + " y movement_type=" + serviceDefinition.getMovementType());
         }
-        return operation;
+        String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
+        return providerWsService.requireUrl(providerKey, wsKey, providerName);
     }
 
     /**
-     * Indica si el proveedor tiene ruta configurada para la capacidad y servicio dados, sin validar item.
-     * Usar en proveedores donde el discriminador no es item sino un mapa externo (ej: CLARO offerIds).
+     * Construye la clave WS para buscar en IN_OMNI_PROVEEDOR_WS.
+     * Formato: CAPABILITY.CASHIN o CAPABILITY.CASHOUT
      *
-     * @param provider configuracion del proveedor
-     * @param capability capacidad transaccional
-     * @param serviceDefinition definicion comercial del servicio
-     * @return true si la operacion tiene path configurado
+     * @param capabilityKey clave de la capacidad (ej: "PRECHECK", "PRECHECK_SORTEO")
+     * @param movementType  tipo de movimiento
+     * @return clave WS (ej: "PRECHECK.CASHIN")
      */
-    protected boolean hasConfiguredPath(
-            AppProperties.ProviderProperties provider,
-            Capability capability,
-            ServiceDefinition serviceDefinition) {
-        AppProperties.ProviderOperationProperties operation =
-                findOperation(provider, capability.name(), serviceDefinition.getMovementType());
-        return operation != null
-                && operation.getPath() != null
-                && !operation.getPath().isBlank();
-    }
-
-    /**
-     * Busca la operacion usando una clave arbitraria (no necesariamente un Capability enum).
-     * Util para operaciones auxiliares como PRECHECK_SORTEO en Pega3.
-     *
-     * @param provider configuracion del proveedor
-     * @param capabilityKey clave de la operacion en el mapa de servicios
-     * @param movementType tipo de movimiento
-     * @return propiedades de la operacion, o null si no existe
-     */
-    protected AppProperties.ProviderOperationProperties findOperationByKey(
-            AppProperties.ProviderProperties provider,
-            String capabilityKey,
-            MovementType movementType) {
-        return findOperation(provider, capabilityKey, movementType);
-    }
-
-    /**
-     * Resuelve la operacion de un proveedor para una capacidad y tipo de movimiento dados.
-     *
-     * @param provider configuracion del proveedor
-     * @param capability capacidad transaccional
-     * @param movementType tipo de movimiento
-     * @return operacion correspondiente, o null si no existe configuracion
-     */
-    protected AppProperties.ProviderOperationProperties findOperation(
-            AppProperties.ProviderProperties provider,
-            Capability capability,
-            MovementType movementType) {
-        return findOperation(provider, capability.name(), movementType);
+    protected static String toWsKey(String capabilityKey, MovementType movementType) {
+        return capabilityKey + "." + (movementType == MovementType.CASH_IN ? "CASHIN" : "CASHOUT");
     }
 
     /**

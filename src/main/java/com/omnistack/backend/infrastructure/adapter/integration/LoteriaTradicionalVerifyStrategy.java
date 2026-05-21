@@ -8,6 +8,7 @@ import com.omnistack.backend.application.dto.VerifyResponse;
 import com.omnistack.backend.application.port.out.TradicionalVerifyPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -31,6 +32,7 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
 
     private final TradicionalVerifyPort verifyPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -42,7 +44,7 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -57,7 +59,7 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
             throw new IntegrationException("Tradicionales requiere authorization (ventaId) para VERIFY");
         }
 
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         TradicionalVerifyCommand command = TradicionalVerifyCommand.builder()
                 .uuid(request.getUuid()).chain(request.getChain()).store(request.getStore())
@@ -70,7 +72,7 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
                 .puntoDeVenta(request.getStoreName())
                 .build();
 
-        ExternalTransactionResponse externalResponse = verifyPort.generateComprobante(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = verifyPort.generateComprobante(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

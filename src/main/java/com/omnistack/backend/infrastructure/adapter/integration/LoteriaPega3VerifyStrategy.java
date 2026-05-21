@@ -8,6 +8,7 @@ import com.omnistack.backend.application.dto.VerifyResponse;
 import com.omnistack.backend.application.port.out.Pega3VerifyTicketPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -31,6 +32,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
 
     private final Pega3VerifyTicketPort pega3VerifyTicketPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -42,7 +44,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -57,7 +59,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
             throw new IntegrationException("Pega3 requiere authorization (ticketNumber) para VERIFY");
         }
 
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         Pega3VerifyTicketCommand command = Pega3VerifyTicketCommand.builder()
                 .uuid(request.getUuid())
@@ -73,7 +75,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
                 .ticketNumber(request.getAuthorization())
                 .build();
 
-        ExternalTransactionResponse externalResponse = pega3VerifyTicketPort.verifyTicket(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = pega3VerifyTicketPort.verifyTicket(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

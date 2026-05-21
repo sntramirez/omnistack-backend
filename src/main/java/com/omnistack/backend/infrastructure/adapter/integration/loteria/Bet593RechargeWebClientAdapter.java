@@ -37,7 +37,6 @@ import reactor.core.publisher.Mono;
 public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet593RechargeValidationPort, Bet593RechargeReversePort {
 
     private static final String PROVIDER_KEY = "loteria";
-    private static final String REVERSE_OPERATION = "REVERSE";
 
     private final WebClient omnistackWebClient;
     private final AppProperties appProperties;
@@ -104,20 +103,9 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
             Function<Boolean, Object> requestFactory,
             String logOperation,
             String errorOperation) {
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
         Object request = requestFactory.apply(false);
-        Bet593RechargeResponse response;
-        try {
-            response = executeLoteriaRequest(request, url, logOperation, errorOperation);
-        } catch (IntegrationException exception) {
-            if (!isInvalidTokenException(exception)) {
-                throw exception;
-            }
-            traceToConsole("Loteria BET593 " + logOperation + " token refresh", url,
-                    "Token invalido detectado; regenerando token y reintentando");
-            request = requestFactory.apply(true);
-            response = executeLoteriaRequest(request, url, logOperation + " retry", errorOperation);
-        }
+        Bet593RechargeResponse response = executeLoteriaRequest(request, url, logOperation, errorOperation);
 
         if (isInvalidTokenResponse(response)) {
             traceToConsole("Loteria BET593 " + logOperation + " token refresh", url,
@@ -198,12 +186,11 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
         validateReverseProviderConfiguration(provider);
         String providerToken = resolveProviderToken(command, provider, forceRefreshToken);
         String username = provider.getAuth().getLogin().getUsername();
-        AppProperties.ProviderOperationProperties operation = provider.getServices().get(REVERSE_OPERATION).getCashin();
 
         return Bet593RechargeReverseRequest.builder()
                 .usuario(username)
                 .maquina(provider.getShopIp())
-                .operacion(requiredValue(operation.getName(), "operation.name"))
+                .operacion("REVRETIROOL")
                 .token(providerToken)
                 .usuarioId(username)
                 .medioId(provider.getMedioId())
@@ -390,21 +377,6 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
         if (provider.getMedioId() == null) {
             throw new IntegrationException("Loteria BET593 requiere medioId configurado");
         }
-        if (provider.getServices() == null
-                || provider.getServices().get(REVERSE_OPERATION) == null
-                || provider.getServices().get(REVERSE_OPERATION).getCashin() == null) {
-            throw new IntegrationException("Loteria BET593 requiere operacion REVERSE cashin configurada");
-        }
-    }
-
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {

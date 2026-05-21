@@ -73,7 +73,7 @@ class EcuabetWithdrawReverseWebClientAdapterTest {
                 .document("0912345678")
                 .amount(new BigDecimal("25.50"))
                 .transactionId(10980)
-                .build(), "/rollback/withdraw");
+                .build(), "http://localhost:" + server.getAddress().getPort() + "/rollback/withdraw");
 
         assertEquals("/rollback/withdraw", capturedPath.get());
         assertEquals("1", capturedChain.get());
@@ -113,7 +113,6 @@ class EcuabetWithdrawReverseWebClientAdapterTest {
 
     private AppProperties appProperties(String baseUrl) {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
-        provider.setBaseUrl(baseUrl);
         provider.setShopId("998739");
         provider.setCountry(66);
         provider.setServiceProviderCode("1");

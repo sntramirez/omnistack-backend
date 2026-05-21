@@ -35,6 +35,7 @@ public class Pega3CreateTicketRequest {
         Integer advanceDraw;
         Integer noOfDraws;
         List<Panel> panels;
+        List<Object> addOns;
     }
 
     /**
@@ -45,7 +46,7 @@ public class Pega3CreateTicketRequest {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Panel {
         String betType;
-        String typeOfEntry;
+        Integer typeOfEntry;
         BigDecimal betAmount;
         List<Entry> entries;
     }
@@ -59,7 +60,7 @@ public class Pega3CreateTicketRequest {
     @NoArgsConstructor(force = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Entry {
-        String type;
+        Integer type;
         Boolean quickPick;
         List<String> playTypes;
         List<Integer> value;

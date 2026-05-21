@@ -6,8 +6,10 @@ import com.omnistack.backend.application.mapper.ResponseFactory;
 import com.omnistack.backend.application.port.out.EcuabetUserSearchPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
+import com.omnistack.backend.domain.enums.MovementType;
 import com.omnistack.backend.domain.model.EcuabetUserSearchCommand;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ServiceDefinition;
@@ -29,6 +31,7 @@ public class EcuabetPrecheckStrategy extends AbstractProviderStrategy implements
 
     private final EcuabetUserSearchPort ecuabetUserSearchPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -37,7 +40,7 @@ public class EcuabetPrecheckStrategy extends AbstractProviderStrategy implements
                 && provider != null
                 && serviceDefinition.getServiceProviderCode() != null
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -47,7 +50,7 @@ public class EcuabetPrecheckStrategy extends AbstractProviderStrategy implements
             Capability capability) {
         AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
         validateProviderCode(request, serviceDefinition, provider);
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         EcuabetUserSearchCommand command = EcuabetUserSearchCommand.builder()
                 .uuid(request.getUuid())
@@ -72,7 +75,7 @@ public class EcuabetPrecheckStrategy extends AbstractProviderStrategy implements
         ExternalTransactionResponse externalResponse = validateCashoutAmount(
                 request,
                 serviceDefinition,
-                ecuabetUserSearchPort.searchUser(command, operation.getPath()));
+                ecuabetUserSearchPort.searchUser(command, operationUrl));
         return ResponseFactory.transactionResponse(request, externalResponse, capability);
     }
 

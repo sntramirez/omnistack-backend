@@ -9,6 +9,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.Bet593RechargeReversePort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ReverseStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -35,6 +36,7 @@ public class LoteriaBet593RechargeReverseStrategy extends AbstractProviderStrate
 
     private final Bet593RechargeReversePort bet593RechargeReversePort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -44,7 +46,7 @@ public class LoteriaBet593RechargeReverseStrategy extends AbstractProviderStrate
                 && serviceDefinition.getMovementType() == MovementType.CASH_IN
                 && serviceDefinition.getServiceProviderCode() != null
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -55,7 +57,7 @@ public class LoteriaBet593RechargeReverseStrategy extends AbstractProviderStrate
         AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
         validateRequiredRequestFields(request);
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         Bet593RechargeCommand command = Bet593RechargeCommand.builder()
                 .uuid(request.getUuid())
@@ -79,7 +81,7 @@ public class LoteriaBet593RechargeReverseStrategy extends AbstractProviderStrate
                 .amount(request.getAmount())
                 .build();
 
-        ExternalTransactionResponse externalResponse = bet593RechargeReversePort.reverseRecharge(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = bet593RechargeReversePort.reverseRecharge(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

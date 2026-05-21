@@ -1,0 +1,101 @@
+/* =========================================================
+   TABLA: TUKUNAFUNC.IN_REGISTRO_PAGOS
+   - Se crea PK con ID técnico (CODIGO) + SEQ + TRIGGER
+   - Índices priorizando: FOLIO, ID_OPERACION_EXTERNO, ID_INTERNO_VENTA
+   ========================================================= */
+
+-- 1) TABLA
+CREATE TABLE TUKUNAFUNC.IN_REGISTRO_PAGOS (
+  CODIGO                    NUMBER(18)        NOT NULL,
+
+  CADENA                    NUMBER(10),
+  FARMACIA                  NUMBER(10),
+  NOMBRE_FARMACIA           VARCHAR2(100),
+  POS                       NUMBER(10),
+
+  FECHA_REGISTRO            DATE,
+  FECHA_AUTORIZACION_PROV   DATE,
+
+  PAIS                      VARCHAR2(100),
+  CANAL                     VARCHAR2(100),
+  CODIGO_PROV_PAGO          VARCHAR2(50),
+
+  FOLIO                     VARCHAR2(200),
+  ID_OPERACION_EXTERNO      VARCHAR2(200),
+  ID_INTERNO_VENTA          VARCHAR2(200),
+
+  NO_REFERENCIA             VARCHAR2(100),
+  NO_REFERENCIA_PAGO        VARCHAR2(100),
+
+  MONTO                     NUMBER(18,2),
+  MONEDA                    VARCHAR2(10),
+  COD_ESTADO_PAGO           VARCHAR2(20),
+  FIRMA                     VARCHAR2(1000),
+
+  CP_VAR1                   VARCHAR2(1500),
+  CP_VAR2                   VARCHAR2(1500),
+  CP_VAR3                   VARCHAR2(1500),
+  CP_NUMBER1                NUMBER,
+  CP_NUMBER2                NUMBER,
+  CP_NUMBER3                NUMBER,
+  CP_DATE1                  DATE,
+  CP_DATE2                  DATE,
+  CP_DATE3                  DATE,
+
+  CONSTRAINT PK_IN_REGISTRO_PAGOS
+    PRIMARY KEY (CODIGO)
+);
+
+-- 2) SECUENCIA (ajusta INCREMENT/CACHE según tu estándar)
+CREATE SEQUENCE TUKUNAFUNC.SEQ_IN_REGISTRO_PAGOS
+  START WITH 1
+  INCREMENT BY 1
+  NOCYCLE
+  CACHE 20;
+  
+--ALTER SEQUENCE TUKUNAFUNC.SEQ_IN_REGISTRO_PAGOS CACHE 20; 
+
+-- 3) TRIGGER (autoincremento para CODIGO)
+CREATE OR REPLACE TRIGGER TUKUNAFUNC.TRG_IN_REGISTRO_PAGOS_BI
+BEFORE INSERT ON TUKUNAFUNC.IN_REGISTRO_PAGOS
+FOR EACH ROW
+BEGIN
+  IF :NEW.CODIGO IS NULL THEN
+    SELECT TUKUNAFUNC.SEQ_IN_REGISTRO_PAGOS.NEXTVAL
+      INTO :NEW.CODIGO
+      FROM DUAL;
+  END IF;
+
+  IF :NEW.FECHA_REGISTRO IS NULL THEN
+    :NEW.FECHA_REGISTRO := SYSDATE;
+  END IF;
+END;
+/
+
+-- 4) ÍNDICES (campos fundamentales aunque sean NULL)
+CREATE INDEX TUKUNAFUNC.IDX_IRP_FOLIO
+  ON TUKUNAFUNC.IN_REGISTRO_PAGOS (FOLIO);
+
+CREATE INDEX TUKUNAFUNC.IDX_IRP_ID_OPER_EXT
+  ON TUKUNAFUNC.IN_REGISTRO_PAGOS (ID_OPERACION_EXTERNO);
+
+CREATE INDEX TUKUNAFUNC.IDX_IRP_ID_INT_VENTA
+  ON TUKUNAFUNC.IN_REGISTRO_PAGOS (ID_INTERNO_VENTA);
+
+-- Índice compuesto para consultas combinadas (muy típico en conciliación/búsqueda)
+CREATE INDEX TUKUNAFUNC.IDX_IRP_FOLIO_OPER_INT
+  ON TUKUNAFUNC.IN_REGISTRO_PAGOS (FOLIO, ID_OPERACION_EXTERNO, ID_INTERNO_VENTA);
+
+-- Índice adicional sugerido para filtros operativos frecuentes (cadena/farmacia/pos/fecha)
+CREATE INDEX TUKUNAFUNC.IDX_IRP_CAD_FAR_POS_FREG
+  ON TUKUNAFUNC.IN_REGISTRO_PAGOS (CADENA, FARMACIA, POS, FECHA_REGISTRO);
+
+-- 5) COMMENTS (opcional, pero recomendado)
+COMMENT ON TABLE  TUKUNAFUNC.IN_REGISTRO_PAGOS IS 'Registro de transacciones/pagos digitales para conciliación y reportería.';
+COMMENT ON COLUMN TUKUNAFUNC.IN_REGISTRO_PAGOS.CODIGO               IS 'Identificador técnico autoincremental (PK).';
+COMMENT ON COLUMN TUKUNAFUNC.IN_REGISTRO_PAGOS.FOLIO                IS 'Folio de venta/documento.';
+COMMENT ON COLUMN TUKUNAFUNC.IN_REGISTRO_PAGOS.ID_OPERACION_EXTERNO IS 'Id de operación externa/proveedor.';
+COMMENT ON COLUMN TUKUNAFUNC.IN_REGISTRO_PAGOS.ID_INTERNO_VENTA     IS 'Id interno de venta.';
+COMMENT ON COLUMN TUKUNAFUNC.IN_REGISTRO_PAGOS.MONTO                IS 'Monto de la transacción.';
+COMMENT ON COLUMN TUKUNAFUNC.IN_REGISTRO_PAGOS.MONEDA               IS 'Moneda (ej. USD).';
+COMMENT ON COLUMN TUKUNAFUNC.IN_REGISTRO_PAGOS.COD_ESTADO_PAGO      IS 'Código/estado del pago.';

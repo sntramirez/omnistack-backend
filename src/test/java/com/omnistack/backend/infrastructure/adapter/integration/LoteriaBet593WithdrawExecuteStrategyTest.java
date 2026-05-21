@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.omnistack.backend.application.dto.ExecuteRequest;
 import com.omnistack.backend.application.dto.ExecuteResponse;
 import com.omnistack.backend.application.port.out.Bet593WithdrawPort;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.ChannelPos;
@@ -24,18 +25,24 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class LoteriaBet593WithdrawExecuteStrategyTest {
 
     @Mock
     private Bet593WithdrawPort bet593WithdrawPort;
+    @Mock
+    private ProviderWsService providerWsService;
 
     private LoteriaBet593WithdrawExecuteStrategy strategy;
 
@@ -48,15 +55,15 @@ class LoteriaBet593WithdrawExecuteStrategyTest {
 
         AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
         capabilityProperties.getCashout().setItem("100708848");
-        capabilityProperties.getCashout().setPath("/APIVentasLoteria/api/Ventas/RetirarBet593");
-        capabilityProperties.getCashout().setCapabilities("RETIROOL");
-        capabilityProperties.getCashout().setName("RETIROOL");
         provider.getServices().put("EXECUTE", capabilityProperties);
 
         AppProperties appProperties = new AppProperties();
         appProperties.getIntegration().setProviders(new HashMap<>(Map.of("loteria", provider)));
 
-        strategy = new LoteriaBet593WithdrawExecuteStrategy(bet593WithdrawPort, appProperties);
+        when(providerWsService.hasUrl("loteria", "EXECUTE.CASHOUT")).thenReturn(true);
+        when(providerWsService.requireUrl(any(), any(), any())).thenReturn("/APIVentasLoteria/api/Ventas/RetirarBet593");
+
+        strategy = new LoteriaBet593WithdrawExecuteStrategy(bet593WithdrawPort, appProperties, providerWsService);
     }
 
     @Test

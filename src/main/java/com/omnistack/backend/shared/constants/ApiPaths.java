@@ -16,7 +16,7 @@ public final class ApiPaths {
     /**
      * Endpoint de prevalidacion transaccional.
      */
-    public static final String V1_PRECHECK = "/v1/precheck";
+    public static final String V1_PRECHECK = "/v1/preCheck";
     /**
      * Endpoint de ejecucion transaccional.
      */

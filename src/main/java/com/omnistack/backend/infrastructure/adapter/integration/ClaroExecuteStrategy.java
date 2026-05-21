@@ -8,6 +8,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.ClaroExecutePort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ExecuteStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -33,6 +34,7 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
 
     private final ClaroExecutePort claroExecutePort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -44,7 +46,7 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredPath(provider, capability, serviceDefinition)
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition)
                 && provider.getOfferIds().containsKey(serviceDefinition.getRmsItemCode());
     }
 
@@ -66,11 +68,7 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
             throw new IntegrationException("CLARO requiere authorization (AUTHORIZATIONNUMBER del PRECHECK)");
         }
 
-        AppProperties.ProviderOperationProperties operation = findOperation(provider, capability, serviceDefinition.getMovementType());
-        if (operation == null || operation.getPath() == null || operation.getPath().isBlank()) {
-            throw new com.omnistack.backend.shared.exception.IntegrationException(
-                    "CLARO no tiene ruta configurada para capability=" + capability.name());
-        }
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
         String offerId = resolveOfferId(provider, request.getRmsItemCode());
         String amount = formatAmount(request.getAmount());
 
@@ -86,7 +84,7 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
                 .authorizationNumber(request.getAuthorization())
                 .build();
 
-        ExternalTransactionResponse externalResponse = claroExecutePort.processRecharge(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = claroExecutePort.processRecharge(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

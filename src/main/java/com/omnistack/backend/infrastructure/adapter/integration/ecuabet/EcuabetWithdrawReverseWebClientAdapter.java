@@ -49,7 +49,7 @@ public class EcuabetWithdrawReverseWebClientAdapter implements EcuabetWithdrawRe
     public ExternalTransactionResponse reverseWithdraw(EcuabetWithdrawCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
         EcuabetWithdrawReverseRequest request = buildExternalRequest(command, provider);
-        String url = resolveUrl(provider.getBaseUrl(), operationPath);
+        String url = operationPath;
 
         traceToConsole("ECUABET withdraw reverse request", url, JsonUtil.toJsonSilently(request));
 
@@ -189,16 +189,6 @@ public class EcuabetWithdrawReverseWebClientAdapter implements EcuabetWithdrawRe
             throw new IntegrationException("ECUABET requiere el campo " + fieldName + " para reverso de nota de retiro");
         }
         return value;
-    }
-
-    private String resolveUrl(String baseUrl, String path) {
-        if (baseUrl.endsWith("/") && path.startsWith("/")) {
-            return baseUrl.substring(0, baseUrl.length() - 1) + path;
-        }
-        if (!baseUrl.endsWith("/") && !path.startsWith("/")) {
-            return baseUrl + "/" + path;
-        }
-        return baseUrl + path;
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {

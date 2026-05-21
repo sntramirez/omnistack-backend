@@ -19,6 +19,7 @@ public class AppProperties {
     private BusinessLines businessLines = new BusinessLines();
     private Integrations integrations = new Integrations();
     private Integration integration = new Integration();
+    private Datasource datasource = new Datasource();
 
     /**
      * Propiedades de metadata Swagger.
@@ -109,6 +110,22 @@ public class AppProperties {
     }
 
     /**
+     * Datasources adicionales (HPROD weblink schema).
+     */
+    @Data
+    public static class Datasource {
+        private HprodDatasource hprod = new HprodDatasource();
+
+        @Data
+        public static class HprodDatasource {
+            private String url;
+            private String username;
+            private String password;
+            private String driverClassName;
+        }
+    }
+
+    /**
      * Propiedades por proveedor externo.
      */
     @Data
@@ -121,7 +138,6 @@ public class AppProperties {
      */
     @Data
     public static class ProviderProperties {
-        private String baseUrl;
         private String technicalUser;
         private String providerName;
         private String categoryCode;
@@ -172,7 +188,6 @@ public class AppProperties {
      */
     @Data
     public static class ProviderLoginProperties {
-        private String path;
         private String username;
         private String password;
         private String productToSell;
@@ -189,12 +204,10 @@ public class AppProperties {
 
     /**
      * Configuracion de una operacion externa concreta.
+     * Solo contiene el item (rms_item_code) para routing; la URL viene de IN_OMNI_PROVEEDOR_WS.
      */
     @Data
     public static class ProviderOperationProperties {
         private String item;
-        private String path;
-        private String capabilities;
-        private String name;
     }
 }

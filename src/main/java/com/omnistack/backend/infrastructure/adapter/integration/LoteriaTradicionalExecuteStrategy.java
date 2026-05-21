@@ -9,6 +9,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.TradicionalVentaBoletosPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ExecuteStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -33,6 +34,7 @@ public class LoteriaTradicionalExecuteStrategy extends AbstractProviderStrategy 
 
     private final TradicionalVentaBoletosPort ventaBoletosPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -44,7 +46,7 @@ public class LoteriaTradicionalExecuteStrategy extends AbstractProviderStrategy 
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -66,7 +68,7 @@ public class LoteriaTradicionalExecuteStrategy extends AbstractProviderStrategy 
         }
 
         ExecuteRequest.BoletoData boletoData = executeRequest.getBoletoData();
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         String clienteId = provider.getShopId() != null ? provider.getShopId()
                 : (provider.getClienteId() != null ? String.valueOf(provider.getClienteId()) : "");
@@ -94,7 +96,7 @@ public class LoteriaTradicionalExecuteStrategy extends AbstractProviderStrategy 
                 .cantidadBoletos(boletoData.getCantidadBoletos() != null ? boletoData.getCantidadBoletos() : 1)
                 .build();
 
-        ExternalTransactionResponse externalResponse = ventaBoletosPort.ventaBoletos(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = ventaBoletosPort.ventaBoletos(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

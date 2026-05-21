@@ -9,6 +9,7 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.TradicionalAnularVentaPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ReverseStrategy;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -32,6 +33,7 @@ public class LoteriaTradicionalReverseStrategy extends AbstractProviderStrategy 
 
     private final TradicionalAnularVentaPort anularVentaPort;
     private final AppProperties appProperties;
+    private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -43,7 +45,7 @@ public class LoteriaTradicionalReverseStrategy extends AbstractProviderStrategy 
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, capability, serviceDefinition);
+                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -59,7 +61,7 @@ public class LoteriaTradicionalReverseStrategy extends AbstractProviderStrategy 
             motivo = reverseRequest.getMotivo();
         }
 
-        AppProperties.ProviderOperationProperties operation = getRequiredOperation(provider, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         String clienteId = provider.getClienteId() != null
                 ? String.valueOf(provider.getClienteId())
@@ -78,7 +80,7 @@ public class LoteriaTradicionalReverseStrategy extends AbstractProviderStrategy 
                 .motivo(motivo)
                 .build();
 
-        ExternalTransactionResponse externalResponse = anularVentaPort.anularVenta(command, operation.getPath());
+        ExternalTransactionResponse externalResponse = anularVentaPort.anularVenta(command, operationUrl);
         return buildResponse(request, externalResponse);
     }
 

@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.omnistack.backend.application.dto.ReverseRequest;
 import com.omnistack.backend.application.dto.ReverseResponse;
 import com.omnistack.backend.application.port.out.EcuabetDepositReversePort;
+import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
 import com.omnistack.backend.domain.enums.ChannelPos;
@@ -24,18 +25,24 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class EcuabetDepositReverseStrategyTest {
 
     @Mock
     private EcuabetDepositReversePort ecuabetDepositReversePort;
+    @Mock
+    private ProviderWsService providerWsService;
 
     private EcuabetDepositReverseStrategy strategy;
 
@@ -47,15 +54,15 @@ class EcuabetDepositReverseStrategyTest {
         provider.setServiceProviderCode("1");
         AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
         capabilityProperties.getCashin().setItem("100713841");
-        capabilityProperties.getCashin().setPath("/rollback/deposit");
-        capabilityProperties.getCashin().setCapabilities("REVERSO_DEPOSITO");
-        capabilityProperties.getCashin().setName("REVERSO_DEPOSITO");
         provider.getServices().put("REVERSE", capabilityProperties);
 
         AppProperties appProperties = new AppProperties();
         appProperties.getIntegration().setProviders(new HashMap<>(Map.of("ecuabet", provider)));
 
-        strategy = new EcuabetDepositReverseStrategy(ecuabetDepositReversePort, appProperties);
+        when(providerWsService.hasUrl("ecuabet", "REVERSE.CASHIN")).thenReturn(true);
+        when(providerWsService.requireUrl(any(), any(), any())).thenReturn("/rollback/deposit");
+
+        strategy = new EcuabetDepositReverseStrategy(ecuabetDepositReversePort, appProperties, providerWsService);
     }
 
     @Test
