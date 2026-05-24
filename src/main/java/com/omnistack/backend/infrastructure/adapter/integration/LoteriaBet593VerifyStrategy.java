@@ -8,6 +8,8 @@ import com.omnistack.backend.application.dto.VerifyResponse;
 import com.omnistack.backend.application.port.out.Bet593RechargeValidationPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -35,18 +37,19 @@ public class LoteriaBet593VerifyStrategy extends AbstractProviderStrategy implem
     private static final String COMMIT_STATUS = "COMMIT";
 
     private final Bet593RechargeValidationPort bet593RechargeValidationPort;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
-        AppProperties.ProviderProperties provider = findProviderProperties(appProperties, PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = findProviderProperties(providerConfigService, PROVIDER_KEY);
         return capability == Capability.VERIFY
                 && provider != null
                 && serviceDefinition.getMovementType() == MovementType.CASH_IN
                 && serviceDefinition.getServiceProviderCode() != null
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
-                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
+                && hasConfiguredOperation(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -54,10 +57,10 @@ public class LoteriaBet593VerifyStrategy extends AbstractProviderStrategy implem
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             Capability capability) {
-        AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
+        AppProperties.ProviderProperties provider = getProviderProperties(providerConfigService, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
         validateRequiredRequestFields(request);
-        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         Bet593RechargeCommand command = Bet593RechargeCommand.builder()
                 .uuid(request.getUuid())

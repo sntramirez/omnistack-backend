@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 
 import com.omnistack.backend.application.dto.PrecheckRequest;
 import com.omnistack.backend.application.port.out.EcuabetUserSearchPort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -40,6 +42,10 @@ class EcuabetPrecheckStrategyTest {
     @Mock
     private EcuabetUserSearchPort ecuabetUserSearchPort;
     @Mock
+    private ProviderConfigService providerConfigService;
+    @Mock
+    private ProviderWsDefsService providerWsDefsService;
+    @Mock
     private ProviderWsService providerWsService;
 
     private EcuabetPrecheckStrategy strategy;
@@ -47,21 +53,20 @@ class EcuabetPrecheckStrategyTest {
     @BeforeEach
     void setUp() {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
+        provider.setCategoryCode("1");
+        provider.setSubcategoryCode("1");
         provider.setServiceProviderCode("1");
-        AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
-        capabilityProperties.getCashin().setItem("100713841");
-        capabilityProperties.getCashout().setItem("100708846");
-        provider.getServices().put("PRECHECK", capabilityProperties);
 
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().setProviders(new HashMap<>(java.util.Map.of("ecuabet", provider)));
+        when(providerConfigService.getProviderProperties("ecuabet")).thenReturn(provider);
+        when(providerWsDefsService.getString("ecuabet", "PRECHECK.CASHIN", "item")).thenReturn("100713841");
+        when(providerWsDefsService.getString("ecuabet", "PRECHECK.CASHOUT", "item")).thenReturn("100708846");
 
         when(providerWsService.hasUrl("ecuabet", "PRECHECK.CASHIN")).thenReturn(true);
         when(providerWsService.requireUrl(any(), eq("PRECHECK.CASHIN"), any())).thenReturn("/user/search");
         when(providerWsService.hasUrl("ecuabet", "PRECHECK.CASHOUT")).thenReturn(true);
         when(providerWsService.requireUrl(any(), eq("PRECHECK.CASHOUT"), any())).thenReturn("/user/searchwithdraw");
 
-        strategy = new EcuabetPrecheckStrategy(ecuabetUserSearchPort, appProperties, providerWsService);
+        strategy = new EcuabetPrecheckStrategy(ecuabetUserSearchPort, providerConfigService, providerWsDefsService, providerWsService);
     }
 
     @Test

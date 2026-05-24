@@ -2,10 +2,13 @@ package com.omnistack.backend.infrastructure.adapter.integration.claro;
 
 import com.omnistack.backend.application.port.out.ClaroExecutePort;
 import com.omnistack.backend.application.port.out.ClaroPrecheckPort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.WsExtLogService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.model.ClaroExecuteCommand;
 import com.omnistack.backend.domain.model.ClaroPrecheckCommand;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
+import com.omnistack.backend.domain.model.ProviderCallLog;
 import com.omnistack.backend.shared.exception.IntegrationException;
 import java.io.StringReader;
 import java.time.LocalDateTime;
@@ -38,9 +41,12 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
 
     private static final String PROVIDER_KEY = "claro";
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private static final String WS_KEY_PRECHECK = "PRECHECK.CASHIN";
+    private static final String WS_KEY_EXECUTE = "EXECUTE.CASHIN";
 
     private final WebClient omnistackWebClient;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
+    private final WsExtLogService wsExtLogService;
 
     @Override
     public ExternalTransactionResponse validateRecharge(ClaroPrecheckCommand command, String operationPath) {
@@ -49,7 +55,8 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         String subscriberId = resolveSubscriberId(command.getPhone());
 
         String xmlBody = buildPrecheckXml(command, provider, trxDate, subscriberId);
-        String responseXml = invokeXml(operationPath, provider, xmlBody, "validateRecharge", "validateRechargeRetail");
+        String responseXml = invokeXml(operationPath, provider, xmlBody, "validateRecharge", "validateRechargeRetail",
+                command.getUuid(), WS_KEY_PRECHECK);
 
         return parseResponse(responseXml, "validateRechargeRetail", command.getAmount(), command.getPhone());
     }
@@ -61,7 +68,8 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         String subscriberId = resolveSubscriberId(command.getPhone());
 
         String xmlBody = buildExecuteXml(command, provider, trxDate, subscriberId);
-        String responseXml = invokeXml(operationPath, provider, xmlBody, "processRecharge", "processRechargeRetail");
+        String responseXml = invokeXml(operationPath, provider, xmlBody, "processRecharge", "processRechargeRetail",
+                command.getUuid(), WS_KEY_EXECUTE);
 
         return parseResponse(responseXml, "processRechargeRetail", command.getAmount(), command.getPhone());
     }
@@ -185,10 +193,12 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             AppProperties.ProviderProperties provider,
             String xmlBody,
             String logOperation,
-            String errorOperation) {
+            String errorOperation,
+            String uuid,
+            String wsKey) {
         String url = operationPath;
+        long startMs = System.currentTimeMillis();
         log.info("CLARO {} request url={} body={}", logOperation, url, xmlBody);
-        System.out.println("CLARO " + logOperation + " request url=" + url + " body=" + xmlBody);
 
         String responseBody;
         try {
@@ -201,21 +211,52 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
                             .defaultIfEmpty("")
                             .flatMap(body -> {
                                 log.error("CLARO {} error url={} body={}", logOperation, url, body);
-                                return Mono.error(new IntegrationException(
-                                        "Error HTTP al invocar " + errorOperation + ": " + body));
+                                String errMsg = "Error HTTP al invocar " + errorOperation + ": " + body;
+                                wsExtLogService.log(ProviderCallLog.builder()
+                                        .uuid(uuid)
+                                        .providerKey(PROVIDER_KEY)
+                                        .wsKey(wsKey)
+                                        .url(url)
+                                        .requestJson(xmlBody)
+                                        .responseJson(body)
+                                        .durationMs(System.currentTimeMillis() - startMs)
+                                        .isError(true)
+                                        .errorMessage(errMsg)
+                                        .build());
+                                return Mono.error(new IntegrationException(errMsg));
                             }))
                     .bodyToMono(String.class)
                     .block();
         } catch (WebClientRequestException exception) {
-            throw new IntegrationException(
-                    "Error de conexion al invocar " + errorOperation + ": " + rootCauseMessage(exception), exception);
+            String errMsg = "Error de conexion al invocar " + errorOperation + ": " + rootCauseMessage(exception);
+            wsExtLogService.log(ProviderCallLog.builder()
+                    .uuid(uuid)
+                    .providerKey(PROVIDER_KEY)
+                    .wsKey(wsKey)
+                    .url(url)
+                    .requestJson(xmlBody)
+                    .responseJson(null)
+                    .durationMs(System.currentTimeMillis() - startMs)
+                    .isError(true)
+                    .errorMessage(errMsg)
+                    .build());
+            throw new IntegrationException(errMsg, exception);
         }
 
         if (responseBody == null || responseBody.isBlank()) {
             throw new IntegrationException("CLARO no retorno contenido para " + errorOperation);
         }
         log.info("CLARO {} response url={} body={}", logOperation, url, responseBody);
-        System.out.println("CLARO " + logOperation + " response url=" + url + " body=" + responseBody);
+        wsExtLogService.log(ProviderCallLog.builder()
+                .uuid(uuid)
+                .providerKey(PROVIDER_KEY)
+                .wsKey(wsKey)
+                .url(url)
+                .requestJson(xmlBody)
+                .responseJson(responseBody)
+                .durationMs(System.currentTimeMillis() - startMs)
+                .isError(false)
+                .build());
         return responseBody;
     }
 
@@ -233,7 +274,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {
-        AppProperties.ProviderProperties provider = appProperties.getIntegration().getProviders().get(PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = providerConfigService.getProviderProperties(PROVIDER_KEY);
         if (provider == null) {
             throw new IntegrationException("No existe configuracion para el proveedor CLARO");
         }

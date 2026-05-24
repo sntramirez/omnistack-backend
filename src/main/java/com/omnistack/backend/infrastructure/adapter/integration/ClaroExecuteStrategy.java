@@ -8,6 +8,8 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.ClaroExecutePort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.ExecuteStrategy;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -33,12 +35,14 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
     private static final String PROVIDER_NAME = "CLARO";
 
     private final ClaroExecutePort claroExecutePort;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
-        AppProperties.ProviderProperties provider = findProviderProperties(appProperties, PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = findProviderProperties(providerConfigService, PROVIDER_KEY);
+        String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
         return capability == Capability.EXECUTE
                 && provider != null
                 && serviceDefinition.getMovementType() == MovementType.CASH_IN
@@ -46,8 +50,8 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition)
-                && provider.getOfferIds().containsKey(serviceDefinition.getRmsItemCode());
+                && providerWsService.hasUrl(PROVIDER_KEY, wsKey)
+                && providerWsDefsService.getOfferIds(PROVIDER_KEY, wsKey).containsKey(serviceDefinition.getRmsItemCode());
     }
 
     @Override
@@ -55,7 +59,7 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             Capability capability) {
-        AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
+        AppProperties.ProviderProperties provider = getProviderProperties(providerConfigService, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
 
         if (request.getPhone() == null || request.getPhone().isBlank()) {
@@ -68,8 +72,9 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
             throw new IntegrationException("CLARO requiere authorization (AUTHORIZATIONNUMBER del PRECHECK)");
         }
 
-        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
-        String offerId = resolveOfferId(provider, request.getRmsItemCode());
+        String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
+        String operationUrl = providerWsService.requireUrl(PROVIDER_KEY, wsKey, PROVIDER_NAME);
+        String offerId = resolveOfferId(providerWsDefsService.getOfferIds(PROVIDER_KEY, wsKey), request.getRmsItemCode());
         String amount = formatAmount(request.getAmount());
 
         ClaroExecuteCommand command = ClaroExecuteCommand.builder()
@@ -114,8 +119,8 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
         return builder.build();
     }
 
-    private String resolveOfferId(AppProperties.ProviderProperties provider, String rmsItemCode) {
-        String offerId = provider.getOfferIds().get(rmsItemCode);
+    private String resolveOfferId(java.util.Map<String, String> offerIds, String rmsItemCode) {
+        String offerId = offerIds.get(rmsItemCode);
         if (offerId == null || offerId.isBlank()) {
             throw new IntegrationException(
                     "CLARO no tiene OFFERID configurado para rms_item_code=" + rmsItemCode);

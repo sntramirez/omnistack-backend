@@ -8,6 +8,8 @@ import com.omnistack.backend.application.dto.VerifyResponse;
 import com.omnistack.backend.application.port.out.TradicionalVerifyPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -31,12 +33,13 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
     private static final String PROVIDER_NAME = "Loteria Tradicionales";
 
     private final TradicionalVerifyPort verifyPort;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
-        AppProperties.ProviderProperties provider = findProviderProperties(appProperties, PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = findProviderProperties(providerConfigService, PROVIDER_KEY);
         return capability == Capability.VERIFY
                 && provider != null
                 && serviceDefinition.getMovementType() == MovementType.CASH_IN
@@ -44,7 +47,7 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
+                && hasConfiguredOperation(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -52,14 +55,14 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             Capability capability) {
-        AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
+        AppProperties.ProviderProperties provider = getProviderProperties(providerConfigService, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
 
         if (request.getAuthorization() == null || request.getAuthorization().isBlank()) {
             throw new IntegrationException("Tradicionales requiere authorization (ventaId) para VERIFY");
         }
 
-        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         TradicionalVerifyCommand command = TradicionalVerifyCommand.builder()
                 .uuid(request.getUuid()).chain(request.getChain()).store(request.getStore())

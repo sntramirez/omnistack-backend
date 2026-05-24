@@ -11,8 +11,11 @@ import com.omnistack.backend.application.port.out.TradicionalNumerosQueryPort;
 import com.omnistack.backend.application.port.out.TradicionalSorteosQueryPort;
 import com.omnistack.backend.application.port.out.TradicionalVentaBoletosPort;
 import com.omnistack.backend.application.port.out.TradicionalVerifyPort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.WsExtLogService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
+import com.omnistack.backend.domain.model.ProviderCallLog;
 import com.omnistack.backend.domain.model.TradicionalAnularVentaCommand;
 import com.omnistack.backend.domain.model.TradicionalFigurasQueryCommand;
 import com.omnistack.backend.domain.model.TradicionalJuegoQueryCommand;
@@ -65,11 +68,19 @@ public class TradicionalWebClientAdapter implements
         TradicionalVerifyPort {
 
     private static final String PROVIDER_KEY = "tradicional";
+    private static final String WS_KEY_PRECHECK = "PRECHECK.CASHIN";
+    private static final String WS_KEY_PRECHECK_SORTEOS = "PRECHECK_SORTEOS.CASHIN";
+    private static final String WS_KEY_PRECHECK_FIGURAS = "PRECHECK_FIGURAS.CASHIN";
+    private static final String WS_KEY_PRECHECK_NUMEROS = "PRECHECK_NUMEROS.CASHIN";
+    private static final String WS_KEY_EXECUTE = "EXECUTE.CASHIN";
+    private static final String WS_KEY_REVERSE = "REVERSE.CASHIN";
+    private static final String WS_KEY_VERIFY = "VERIFY.CASHIN";
 
     private final WebClient omnistackWebClient;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
     private final ObjectMapper objectMapper;
     private final ProviderTokenResolverUseCase providerTokenResolverUseCase;
+    private final WsExtLogService wsExtLogService;
 
     @Override
     public ExternalTransactionResponse queryJuegos(TradicionalJuegoQueryCommand command, String operationPath) {
@@ -82,7 +93,8 @@ public class TradicionalWebClientAdapter implements
                 .medioId(provider.getMedioId())
                 .build();
 
-        String body = invokePost(operationPath, provider, request, "queryJuegos", "consulta juegos Tradicionales");
+        String body = invokePost(operationPath, provider, request, "queryJuegos", "consulta juegos Tradicionales",
+                command.getUuid(), WS_KEY_PRECHECK);
 
         List<TradicionalJuegoQueryResponse> juegos;
         try {
@@ -117,7 +129,7 @@ public class TradicionalWebClientAdapter implements
 
         TradicionalSorteosQueryResponse response = invokePost(
                 operationPath, provider, request, TradicionalSorteosQueryResponse.class,
-                "querySorteos", "consulta sorteos Tradicionales");
+                "querySorteos", "consulta sorteos Tradicionales", command.getUuid(), WS_KEY_PRECHECK_SORTEOS);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !isSuccess(response.getCodError());
@@ -147,7 +159,7 @@ public class TradicionalWebClientAdapter implements
 
         TradicionalFigurasQueryResponse response = invokePost(
                 operationPath, provider, request, TradicionalFigurasQueryResponse.class,
-                "queryFiguras", "consulta figuras Tradicionales");
+                "queryFiguras", "consulta figuras Tradicionales", command.getUuid(), WS_KEY_PRECHECK_FIGURAS);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !isSuccess(response.getCodError());
@@ -183,7 +195,7 @@ public class TradicionalWebClientAdapter implements
 
         TradicionalNumerosQueryResponse response = invokePost(
                 operationPath, provider, request, TradicionalNumerosQueryResponse.class,
-                "queryNumeros", "consulta numeros Tradicionales");
+                "queryNumeros", "consulta numeros Tradicionales", command.getUuid(), WS_KEY_PRECHECK_NUMEROS);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !isSuccess(response.getCodError());
@@ -239,7 +251,7 @@ public class TradicionalWebClientAdapter implements
 
         TradicionalVentaBoletosResponse response = invokePost(
                 operationPath, provider, request, TradicionalVentaBoletosResponse.class,
-                "ventaBoletos", "venta boletos Tradicionales");
+                "ventaBoletos", "venta boletos Tradicionales", command.getUuid(), WS_KEY_EXECUTE);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !response.isSuccess();
@@ -274,7 +286,7 @@ public class TradicionalWebClientAdapter implements
 
         TradicionalAnularVentaResponse response = invokePost(
                 operationPath, provider, request, TradicionalAnularVentaResponse.class,
-                "anularVenta", "anulacion venta Tradicionales");
+                "anularVenta", "anulacion venta Tradicionales", command.getUuid(), WS_KEY_REVERSE);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !response.isSuccess();
@@ -299,7 +311,7 @@ public class TradicionalWebClientAdapter implements
                 + "&puntoDeVenta=" + encodeParam(command.getPuntoDeVenta());
 
         log.info("Tradicionales generateComprobante GET url={}", fullUrl);
-        System.out.println("Tradicionales generateComprobante GET url=" + fullUrl);
+        long startMs = System.currentTimeMillis();
 
         byte[] bytes;
         try {
@@ -310,18 +322,51 @@ public class TradicionalWebClientAdapter implements
                             .defaultIfEmpty("")
                             .flatMap(body -> {
                                 log.error("Tradicionales generateComprobante error url={} body={}", fullUrl, body);
-                                return Mono.error(new IntegrationException(
-                                        "Error HTTP al invocar GenerarComprobanteVenta: " + body));
+                                String errMsg = "Error HTTP al invocar GenerarComprobanteVenta: " + body;
+                                wsExtLogService.log(ProviderCallLog.builder()
+                                        .uuid(command.getUuid())
+                                        .providerKey(PROVIDER_KEY)
+                                        .wsKey(WS_KEY_VERIFY)
+                                        .url(fullUrl)
+                                        .requestJson(null)
+                                        .responseJson(body)
+                                        .durationMs(System.currentTimeMillis() - startMs)
+                                        .isError(true)
+                                        .errorMessage(errMsg)
+                                        .build());
+                                return Mono.error(new IntegrationException(errMsg));
                             }))
                     .bodyToMono(byte[].class)
                     .block();
         } catch (WebClientRequestException exception) {
-            throw new IntegrationException(
-                    "Error de conexion al invocar GenerarComprobanteVenta: " + rootCauseMessage(exception), exception);
+            String errMsg = "Error de conexion al invocar GenerarComprobanteVenta: " + rootCauseMessage(exception);
+            wsExtLogService.log(ProviderCallLog.builder()
+                    .uuid(command.getUuid())
+                    .providerKey(PROVIDER_KEY)
+                    .wsKey(WS_KEY_VERIFY)
+                    .url(fullUrl)
+                    .requestJson(null)
+                    .responseJson(null)
+                    .durationMs(System.currentTimeMillis() - startMs)
+                    .isError(true)
+                    .errorMessage(errMsg)
+                    .build());
+            throw new IntegrationException(errMsg, exception);
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = bytes == null || bytes.length == 0;
+        wsExtLogService.log(ProviderCallLog.builder()
+                .uuid(command.getUuid())
+                .providerKey(PROVIDER_KEY)
+                .wsKey(WS_KEY_VERIFY)
+                .url(fullUrl)
+                .requestJson(null)
+                .responseJson(isError ? null : "[binary pdf " + (bytes != null ? bytes.length : 0) + " bytes]")
+                .durationMs(System.currentTimeMillis() - startMs)
+                .isError(isError)
+                .errorMessage(isError ? "GenerarComprobanteVenta no retorno contenido" : null)
+                .build());
         if (!isError) {
             payload.put("comprobante_b64", Base64.getEncoder().encodeToString(bytes));
         }
@@ -340,11 +385,13 @@ public class TradicionalWebClientAdapter implements
             AppProperties.ProviderProperties provider,
             Object request,
             String logOperation,
-            String errorOperation) {
+            String errorOperation,
+            String uuid,
+            String wsKey) {
         String url = operationPath;
-        log.info("Tradicionales {} request url={} body={}", logOperation, url, JsonUtil.toJsonSilently(request));
-        System.out.println("Tradicionales " + logOperation + " request url=" + url
-                + " body=" + JsonUtil.toJsonSilently(request));
+        long startMs = System.currentTimeMillis();
+        String requestJson = JsonUtil.toJsonSilently(request);
+        log.info("Tradicionales {} request url={} body={}", logOperation, url, requestJson);
 
         String body;
         try {
@@ -357,21 +404,52 @@ public class TradicionalWebClientAdapter implements
                             .defaultIfEmpty("")
                             .flatMap(b -> {
                                 log.error("Tradicionales {} error url={} body={}", logOperation, url, b);
-                                return Mono.error(new IntegrationException(
-                                        "Error HTTP al invocar " + errorOperation + ": " + b));
+                                String errMsg = "Error HTTP al invocar " + errorOperation + ": " + b;
+                                wsExtLogService.log(ProviderCallLog.builder()
+                                        .uuid(uuid)
+                                        .providerKey(PROVIDER_KEY)
+                                        .wsKey(wsKey)
+                                        .url(url)
+                                        .requestJson(requestJson)
+                                        .responseJson(b)
+                                        .durationMs(System.currentTimeMillis() - startMs)
+                                        .isError(true)
+                                        .errorMessage(errMsg)
+                                        .build());
+                                return Mono.error(new IntegrationException(errMsg));
                             }))
                     .bodyToMono(String.class)
                     .block();
         } catch (WebClientRequestException exception) {
-            throw new IntegrationException(
-                    "Error de conexion al invocar " + errorOperation + ": " + rootCauseMessage(exception), exception);
+            String errMsg = "Error de conexion al invocar " + errorOperation + ": " + rootCauseMessage(exception);
+            wsExtLogService.log(ProviderCallLog.builder()
+                    .uuid(uuid)
+                    .providerKey(PROVIDER_KEY)
+                    .wsKey(wsKey)
+                    .url(url)
+                    .requestJson(requestJson)
+                    .responseJson(null)
+                    .durationMs(System.currentTimeMillis() - startMs)
+                    .isError(true)
+                    .errorMessage(errMsg)
+                    .build());
+            throw new IntegrationException(errMsg, exception);
         }
 
         if (body == null || body.isBlank()) {
             throw new IntegrationException("Tradicionales no retorno contenido para " + errorOperation);
         }
         log.info("Tradicionales {} response url={} body={}", logOperation, url, body);
-        System.out.println("Tradicionales " + logOperation + " response url=" + url + " body=" + body);
+        wsExtLogService.log(ProviderCallLog.builder()
+                .uuid(uuid)
+                .providerKey(PROVIDER_KEY)
+                .wsKey(wsKey)
+                .url(url)
+                .requestJson(requestJson)
+                .responseJson(body)
+                .durationMs(System.currentTimeMillis() - startMs)
+                .isError(false)
+                .build());
         return body;
     }
 
@@ -381,8 +459,10 @@ public class TradicionalWebClientAdapter implements
             Object request,
             Class<T> responseType,
             String logOperation,
-            String errorOperation) {
-        String body = invokePost(operationPath, provider, request, logOperation, errorOperation);
+            String errorOperation,
+            String uuid,
+            String wsKey) {
+        String body = invokePost(operationPath, provider, request, logOperation, errorOperation, uuid, wsKey);
         try {
             return objectMapper.readValue(body, responseType);
         } catch (JsonProcessingException e) {
@@ -391,7 +471,7 @@ public class TradicionalWebClientAdapter implements
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {
-        AppProperties.ProviderProperties provider = appProperties.getIntegration().getProviders().get(PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = providerConfigService.getProviderProperties(PROVIDER_KEY);
         if (provider == null) {
             throw new IntegrationException("No existe configuracion para el proveedor Tradicionales");
         }

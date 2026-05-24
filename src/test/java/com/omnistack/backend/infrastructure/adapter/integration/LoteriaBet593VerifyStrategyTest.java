@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 import com.omnistack.backend.application.dto.VerifyRequest;
 import com.omnistack.backend.application.dto.VerifyResponse;
 import com.omnistack.backend.application.port.out.Bet593RechargeValidationPort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -21,10 +23,8 @@ import com.omnistack.backend.domain.model.Bet593RechargeCommand;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ServiceDefinition;
 import com.omnistack.backend.shared.exception.IntegrationException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +41,10 @@ class LoteriaBet593VerifyStrategyTest {
     @Mock
     private Bet593RechargeValidationPort bet593RechargeValidationPort;
     @Mock
+    private ProviderConfigService providerConfigService;
+    @Mock
+    private ProviderWsDefsService providerWsDefsService;
+    @Mock
     private ProviderWsService providerWsService;
 
     private LoteriaBet593VerifyStrategy strategy;
@@ -52,17 +56,13 @@ class LoteriaBet593VerifyStrategyTest {
         provider.setSubcategoryCode("1");
         provider.setServiceProviderCode("2");
 
-        AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
-        capabilityProperties.getCashin().setItem("100708850");
-        provider.getServices().put("VERIFY", capabilityProperties);
-
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().setProviders(new HashMap<>(Map.of("loteria", provider)));
+        when(providerConfigService.getProviderProperties("loteria")).thenReturn(provider);
+        when(providerWsDefsService.getString("loteria", "VERIFY.CASHIN", "item")).thenReturn("100708850");
 
         when(providerWsService.hasUrl("loteria", "VERIFY.CASHIN")).thenReturn(true);
         when(providerWsService.requireUrl(any(), any(), any())).thenReturn("/APIVentasLoteria/api/Ventas/ValidarBet593");
 
-        strategy = new LoteriaBet593VerifyStrategy(bet593RechargeValidationPort, appProperties, providerWsService);
+        strategy = new LoteriaBet593VerifyStrategy(bet593RechargeValidationPort, providerConfigService, providerWsDefsService, providerWsService);
     }
 
     @Test

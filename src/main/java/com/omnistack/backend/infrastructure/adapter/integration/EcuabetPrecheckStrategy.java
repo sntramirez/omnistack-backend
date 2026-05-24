@@ -6,6 +6,8 @@ import com.omnistack.backend.application.mapper.ResponseFactory;
 import com.omnistack.backend.application.port.out.EcuabetUserSearchPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -30,17 +32,18 @@ public class EcuabetPrecheckStrategy extends AbstractProviderStrategy implements
     private static final String PROVIDER_NAME = "ECUABET";
 
     private final EcuabetUserSearchPort ecuabetUserSearchPort;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
-        AppProperties.ProviderProperties provider = findProviderProperties(appProperties, PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = findProviderProperties(providerConfigService, PROVIDER_KEY);
         return capability == Capability.PRECHECK
                 && provider != null
                 && serviceDefinition.getServiceProviderCode() != null
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
-                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
+                && hasConfiguredOperation(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -48,9 +51,9 @@ public class EcuabetPrecheckStrategy extends AbstractProviderStrategy implements
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             Capability capability) {
-        AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
+        AppProperties.ProviderProperties provider = getProviderProperties(providerConfigService, PROVIDER_KEY, PROVIDER_NAME);
         validateProviderCode(request, serviceDefinition, provider);
-        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         EcuabetUserSearchCommand command = EcuabetUserSearchCommand.builder()
                 .uuid(request.getUuid())

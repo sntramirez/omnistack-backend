@@ -1,5 +1,7 @@
 package com.omnistack.backend.application.port.out.strategy;
 
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -9,41 +11,23 @@ import com.omnistack.backend.shared.exception.IntegrationException;
 import java.math.BigDecimal;
 import java.util.Map;
 
-/**
- * Base comun para strategies de proveedor externo.
- *
- * <p>Centraliza los helpers de resolucion de configuracion, validacion de valores
- * y extraccion de payload que se repiten en todas las implementaciones concretas.
- * Las subclases inyectan {@code AppProperties} via constructor y lo pasan como
- * parametro en cada llamada al helper correspondiente.</p>
- */
+
 public abstract class AbstractProviderStrategy implements TransactionFlowStrategy {
 
     /**
-     * Devuelve la configuracion del proveedor identificado por {@code key}, o {@code null} si no existe.
-     *
-     * @param appProperties propiedades de la aplicacion
-     * @param key clave del proveedor en el mapa de integraciones
-     * @return configuracion del proveedor, o null
+     * Devuelve la configuracion del proveedor desde DB, o null si no existe.
      */
-    protected AppProperties.ProviderProperties findProviderProperties(AppProperties appProperties, String key) {
-        return appProperties.getIntegration().getProviders().get(key);
+    protected AppProperties.ProviderProperties findProviderProperties(
+            ProviderConfigService configService, String key) {
+        return configService.getProviderProperties(key);
     }
 
     /**
-     * Devuelve la configuracion del proveedor o lanza excepcion si no existe.
-     *
-     * @param appProperties propiedades de la aplicacion
-     * @param key clave del proveedor
-     * @param providerName nombre legible para el mensaje de error
-     * @return configuracion del proveedor
-     * @throws IntegrationException si no existe configuracion para el proveedor
+     * Devuelve la configuracion del proveedor desde DB o lanza excepcion si no existe.
      */
     protected AppProperties.ProviderProperties getProviderProperties(
-            AppProperties appProperties,
-            String key,
-            String providerName) {
-        AppProperties.ProviderProperties provider = findProviderProperties(appProperties, key);
+            ProviderConfigService configService, String key, String providerName) {
+        AppProperties.ProviderProperties provider = configService.getProviderProperties(key);
         if (provider == null) {
             throw new IntegrationException("No existe configuracion para el proveedor " + providerName);
         }
@@ -51,60 +35,41 @@ public abstract class AbstractProviderStrategy implements TransactionFlowStrateg
     }
 
     /**
-     * Indica si el proveedor tiene el item configurado y la URL en DB para la operacion dada.
-     * La URL se verifica contra IN_OMNI_PROVEEDOR_WS via ProviderWsService.
-     *
-     * @param provider          configuracion del proveedor
-     * @param providerWsService servicio de URLs desde DB
-     * @param providerKey       clave del proveedor en el mapa de integraciones
-     * @param capability        capacidad transaccional
-     * @param serviceDefinition definicion comercial del servicio
-     * @return true si item coincide con rms_item_code y existe URL en DB
+     * Indica si existe item en WS_DEFS que coincida con rms_item_code y URL en DB para la operacion.
+     * Usa IN_OMNI_PROVEEDOR_WS_DEFS (campo "item") en lugar de AppProperties.services.
      */
     protected boolean hasConfiguredOperation(
-            AppProperties.ProviderProperties provider,
-            ProviderWsService providerWsService,
+            ProviderWsService wsService,
+            ProviderWsDefsService defsService,
             String providerKey,
             Capability capability,
             ServiceDefinition serviceDefinition) {
-        AppProperties.ProviderOperationProperties operation =
-                findOperation(provider, capability.name(), serviceDefinition.getMovementType());
         String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
-        return operation != null
-                && operation.getItem() != null
-                && operation.getItem().equalsIgnoreCase(serviceDefinition.getRmsItemCode())
-                && providerWsService.hasUrl(providerKey, wsKey);
+        String configuredItem = defsService.getString(providerKey, wsKey, "item");
+        return configuredItem != null
+                && configuredItem.equalsIgnoreCase(serviceDefinition.getRmsItemCode())
+                && wsService.hasUrl(providerKey, wsKey);
     }
 
     /**
-     * Valida que el item coincida y retorna la URL completa desde DB para la operacion.
-     *
-     * @param provider          configuracion del proveedor
-     * @param providerWsService servicio de URLs desde DB
-     * @param providerKey       clave del proveedor
-     * @param capability        capacidad transaccional
-     * @param serviceDefinition definicion comercial del servicio
-     * @param providerName      nombre legible para mensajes de error
-     * @return URL completa del endpoint externo
-     * @throws IntegrationException si el item no coincide o no existe URL en DB
+     * Valida item en WS_DEFS y retorna la URL completa desde DB para la operacion.
      */
     protected String getRequiredOperationUrl(
-            AppProperties.ProviderProperties provider,
-            ProviderWsService providerWsService,
+            ProviderWsService wsService,
+            ProviderWsDefsService defsService,
             String providerKey,
             Capability capability,
             ServiceDefinition serviceDefinition,
             String providerName) {
-        AppProperties.ProviderOperationProperties operation =
-                findOperation(provider, capability.name(), serviceDefinition.getMovementType());
-        if (operation == null || operation.getItem() == null
-                || !operation.getItem().equalsIgnoreCase(serviceDefinition.getRmsItemCode())) {
+        String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
+        String configuredItem = defsService.getString(providerKey, wsKey, "item");
+        if (configuredItem == null
+                || !configuredItem.equalsIgnoreCase(serviceDefinition.getRmsItemCode())) {
             throw new IntegrationException(providerName + " no tiene item configurado para rms_item_code="
                     + serviceDefinition.getRmsItemCode() + ", capability=" + capability.name()
                     + " y movement_type=" + serviceDefinition.getMovementType());
         }
-        String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
-        return providerWsService.requireUrl(providerKey, wsKey, providerName);
+        return wsService.requireUrl(providerKey, wsKey, providerName);
     }
 
     /**
@@ -195,20 +160,4 @@ public abstract class AbstractProviderStrategy implements TransactionFlowStrateg
         return value == null || value.isBlank() ? null : new BigDecimal(value);
     }
 
-    private AppProperties.ProviderOperationProperties findOperation(
-            AppProperties.ProviderProperties provider,
-            String capabilityKey,
-            MovementType movementType) {
-        if (provider.getServices() == null || movementType == null) {
-            return null;
-        }
-        AppProperties.ProviderCapabilityProperties capabilityProperties =
-                provider.getServices().get(capabilityKey);
-        if (capabilityProperties == null) {
-            return null;
-        }
-        return movementType == MovementType.CASH_IN
-                ? capabilityProperties.getCashin()
-                : capabilityProperties.getCashout();
-    }
 }

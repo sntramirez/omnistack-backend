@@ -8,6 +8,7 @@ import com.omnistack.backend.application.port.in.ProviderTokenResolverUseCase;
 import com.omnistack.backend.application.port.out.ProviderTokenLoginPort;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.model.ProviderToken;
+import java.util.Map.Entry;
 import com.omnistack.backend.domain.model.ProviderTokenLoginCommand;
 import com.omnistack.backend.domain.model.ProviderTokenLoginResult;
 import com.omnistack.backend.shared.exception.BusinessException;
@@ -36,7 +37,7 @@ public class ProviderTokenService implements ProviderTokenResolverUseCase, Provi
     private static final String TOKEN_MODE_LOGIN = "LOGIN";
     private static final String TOKEN_MODE_STATIC = "STATIC";
 
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
     private final ProviderTokenLoginPort providerTokenLoginPort;
     private final ProviderWsService providerWsService;
     private final Clock clock;
@@ -52,7 +53,7 @@ public class ProviderTokenService implements ProviderTokenResolverUseCase, Provi
      */
     @Override
     public String getToken(String categoryCode, String subcategoryCode, String serviceProviderCode) {
-        Map.Entry<String, AppProperties.ProviderProperties> entry = getRequiredProviderEntry(categoryCode, subcategoryCode, serviceProviderCode);
+        Entry<String, AppProperties.ProviderProperties> entry = getRequiredProviderEntry(categoryCode, subcategoryCode, serviceProviderCode);
         AppProperties.ProviderProperties provider = entry.getValue();
         if (usesStaticToken(provider)) {
             return getStaticToken(provider);
@@ -70,7 +71,7 @@ public class ProviderTokenService implements ProviderTokenResolverUseCase, Provi
      */
     @Override
     public String refreshToken(String categoryCode, String subcategoryCode, String serviceProviderCode) {
-        Map.Entry<String, AppProperties.ProviderProperties> entry = getRequiredProviderEntry(categoryCode, subcategoryCode, serviceProviderCode);
+        Entry<String, AppProperties.ProviderProperties> entry = getRequiredProviderEntry(categoryCode, subcategoryCode, serviceProviderCode);
         AppProperties.ProviderProperties provider = entry.getValue();
         if (usesStaticToken(provider)) {
             return getStaticToken(provider);
@@ -86,7 +87,7 @@ public class ProviderTokenService implements ProviderTokenResolverUseCase, Provi
      */
     @Override
     public ProviderTokenRefreshResponse refreshToken(ProviderTokenRefreshRequest request) {
-        Map.Entry<String, AppProperties.ProviderProperties> entry = getRequiredProviderEntry(
+        Entry<String, AppProperties.ProviderProperties> entry = getRequiredProviderEntry(
                 request.getCategoryCode(),
                 request.getSubcategoryCode(),
                 request.getServiceProviderCode());
@@ -119,10 +120,9 @@ public class ProviderTokenService implements ProviderTokenResolverUseCase, Provi
      */
     @Override
     public void refreshTokensOnStartup() {
-        for (Map.Entry<String, AppProperties.ProviderProperties> entry : appProperties.getIntegration().getProviders().entrySet()) {
-            String providerKey = entry.getKey();
-            AppProperties.ProviderProperties provider = entry.getValue();
-            if (!requiresStartupRefresh(provider)) {
+        for (String providerKey : providerConfigService.allProviderKeys()) {
+            AppProperties.ProviderProperties provider = providerConfigService.getProviderProperties(providerKey);
+            if (provider == null || !requiresStartupRefresh(provider)) {
                 continue;
             }
             if (!providerWsService.hasUrl(providerKey, "LOGIN")) {
@@ -243,11 +243,13 @@ public class ProviderTokenService implements ProviderTokenResolverUseCase, Provi
         return provider.getToken();
     }
 
-    private Map.Entry<String, AppProperties.ProviderProperties> getRequiredProviderEntry(
+    private Entry<String, AppProperties.ProviderProperties> getRequiredProviderEntry(
             String categoryCode,
             String subcategoryCode,
             String serviceProviderCode) {
-        return appProperties.getIntegration().getProviders().entrySet().stream()
+        return providerConfigService.allProviderKeys().stream()
+                .map(key -> Map.entry(key, providerConfigService.getProviderProperties(key)))
+                .filter(e -> e.getValue() != null)
                 .filter(e -> normalize(e.getValue().getServiceProviderCode()) != null)
                 .filter(e -> normalize(e.getValue().getServiceProviderCode()).equals(normalize(serviceProviderCode)))
                 .filter(e -> matchesContext(e.getValue(), categoryCode, subcategoryCode))

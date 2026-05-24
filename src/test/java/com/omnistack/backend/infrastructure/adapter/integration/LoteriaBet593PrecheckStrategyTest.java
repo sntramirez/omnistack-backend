@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 
 import com.omnistack.backend.application.dto.PrecheckRequest;
 import com.omnistack.backend.application.port.out.Bet593RechargePort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -21,10 +23,8 @@ import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ServiceDefinition;
 import com.omnistack.backend.shared.exception.IntegrationException;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +41,10 @@ class LoteriaBet593PrecheckStrategyTest {
     @Mock
     private Bet593RechargePort bet593RechargePort;
     @Mock
+    private ProviderConfigService providerConfigService;
+    @Mock
+    private ProviderWsDefsService providerWsDefsService;
+    @Mock
     private ProviderWsService providerWsService;
 
     private LoteriaBet593PrecheckStrategy strategy;
@@ -52,17 +56,13 @@ class LoteriaBet593PrecheckStrategyTest {
         provider.setSubcategoryCode("1");
         provider.setServiceProviderCode("2");
 
-        AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
-        capabilityProperties.getCashin().setItem("100708850");
-        provider.getServices().put("PRECHECK", capabilityProperties);
-
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().setProviders(new HashMap<>(Map.of("loteria", provider)));
+        when(providerConfigService.getProviderProperties("loteria")).thenReturn(provider);
+        when(providerWsDefsService.getString("loteria", "PRECHECK.CASHIN", "item")).thenReturn("100708850");
 
         when(providerWsService.hasUrl("loteria", "PRECHECK.CASHIN")).thenReturn(true);
         when(providerWsService.requireUrl(any(), any(), any())).thenReturn("/APIVentasLoteria/api/Ventas/RecargarBet593");
 
-        strategy = new LoteriaBet593PrecheckStrategy(bet593RechargePort, appProperties, providerWsService);
+        strategy = new LoteriaBet593PrecheckStrategy(bet593RechargePort, providerConfigService, providerWsDefsService, providerWsService);
     }
 
     @Test

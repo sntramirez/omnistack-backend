@@ -9,8 +9,11 @@ import com.omnistack.backend.application.port.out.Pega3DrawQueryPort;
 import com.omnistack.backend.application.port.out.Pega3PayTicketPort;
 import com.omnistack.backend.application.port.out.Pega3ProductQueryPort;
 import com.omnistack.backend.application.port.out.Pega3VerifyTicketPort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.WsExtLogService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
+import com.omnistack.backend.domain.model.ProviderCallLog;
 import com.omnistack.backend.domain.model.Pega3CancelTicketCommand;
 import com.omnistack.backend.domain.model.Pega3CreateTicketCommand;
 import com.omnistack.backend.domain.model.Pega3DrawQueryCommand;
@@ -67,11 +70,18 @@ public class Pega3WebClientAdapter implements
     private static final int ENTRY_TYPE_REGULAR = 1;
     private static final int TYPE_OF_ENTRY_QUICK_PICK = 1;
     private static final int TYPE_OF_ENTRY_MANUAL = 3;
+    private static final String WS_KEY_PRECHECK = "PRECHECK.CASHIN";
+    private static final String WS_KEY_PRECHECK_SORTEO = "PRECHECK_SORTEO.CASHIN";
+    private static final String WS_KEY_CREATE_TICKET = "CREATE_TICKET.CASHIN";
+    private static final String WS_KEY_EXECUTE = "EXECUTE.CASHIN";
+    private static final String WS_KEY_VERIFY = "VERIFY.CASHIN";
+    private static final String WS_KEY_REVERSE = "REVERSE.CASHIN";
 
     private final WebClient omnistackWebClient;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
     private final ObjectMapper objectMapper;
     private final ProviderTokenResolverUseCase providerTokenResolverUseCase;
+    private final WsExtLogService wsExtLogService;
 
     @Override
     public ExternalTransactionResponse queryProduct(Pega3ProductQueryCommand command, String operationPath) {
@@ -86,7 +96,7 @@ public class Pega3WebClientAdapter implements
 
         Pega3ProductQueryResponse response = invokePega3(
                 operationPath, provider, request, Pega3ProductQueryResponse.class,
-                "queryProduct", "consulta producto Pega3");
+                "queryProduct", "consulta producto Pega3", command.getUuid(), WS_KEY_PRECHECK);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = hasError(response.getMessage());
@@ -117,7 +127,7 @@ public class Pega3WebClientAdapter implements
 
         Pega3DrawQueryResponse response = invokePega3(
                 operationPath, provider, request, Pega3DrawQueryResponse.class,
-                "queryActiveDraw", "consulta sorteo activo Pega3");
+                "queryActiveDraw", "consulta sorteo activo Pega3", command.getUuid(), WS_KEY_PRECHECK_SORTEO);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = hasError(response.getMessage());
@@ -154,7 +164,7 @@ public class Pega3WebClientAdapter implements
 
         Pega3CreateTicketResponse response = invokePega3(
                 operationPath, provider, request, Pega3CreateTicketResponse.class,
-                "createTicket", "creacion ticket Pega3");
+                "createTicket", "creacion ticket Pega3", command.getUuid(), WS_KEY_CREATE_TICKET);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = hasError(response.getMessage());
@@ -192,7 +202,7 @@ public class Pega3WebClientAdapter implements
 
         Pega3PayTicketResponse response = invokePega3(
                 operationPath, provider, request, Pega3PayTicketResponse.class,
-                "payTicket", "pago ticket Pega3");
+                "payTicket", "pago ticket Pega3", command.getUuid(), WS_KEY_EXECUTE);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = hasError(response.getMessage());
@@ -224,7 +234,7 @@ public class Pega3WebClientAdapter implements
 
         Pega3VerifyTicketResponse response = invokePega3(
                 operationPath, provider, request, Pega3VerifyTicketResponse.class,
-                "verifyTicket", "consulta ticket Pega3");
+                "verifyTicket", "consulta ticket Pega3", command.getUuid(), WS_KEY_VERIFY);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = hasError(response.getMessage());
@@ -260,7 +270,7 @@ public class Pega3WebClientAdapter implements
 
         Pega3CancelTicketResponse response = invokePega3(
                 operationPath, provider, request, Pega3CancelTicketResponse.class,
-                "cancelTicket", "cancelacion ticket Pega3");
+                "cancelTicket", "cancelacion ticket Pega3", command.getUuid(), WS_KEY_REVERSE);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = hasError(response.getMessage());
@@ -283,9 +293,13 @@ public class Pega3WebClientAdapter implements
             Object request,
             Class<T> responseType,
             String logOperation,
-            String errorOperation) {
+            String errorOperation,
+            String uuid,
+            String wsKey) {
         String url = operationPath;
-        traceToConsole("Pega3 " + logOperation + " request", url, JsonUtil.toJsonSilently(request));
+        long startMs = System.currentTimeMillis();
+        String requestJson = JsonUtil.toJsonSilently(request);
+        traceToConsole("Pega3 " + logOperation + " request", url, requestJson);
 
         T response;
         try {
@@ -298,22 +312,56 @@ public class Pega3WebClientAdapter implements
                             .defaultIfEmpty("")
                             .flatMap(body -> {
                                 traceErrorToConsole("Pega3 " + logOperation + " error", url, body);
-                                return Mono.error(new IntegrationException(
-                                        "Error HTTP al invocar " + errorOperation + ": " + body));
+                                String errMsg = "Error HTTP al invocar " + errorOperation + ": " + body;
+                                wsExtLogService.log(ProviderCallLog.builder()
+                                        .uuid(uuid)
+                                        .providerKey(PROVIDER_KEY)
+                                        .wsKey(wsKey)
+                                        .url(url)
+                                        .requestJson(requestJson)
+                                        .responseJson(body)
+                                        .durationMs(System.currentTimeMillis() - startMs)
+                                        .isError(true)
+                                        .errorMessage(errMsg)
+                                        .build());
+                                return Mono.error(new IntegrationException(errMsg));
                             }))
                     .bodyToMono(String.class)
                     .map(body -> parseResponse(body, responseType, errorOperation))
                     .block();
         } catch (WebClientRequestException exception) {
             traceErrorToConsole("Pega3 " + logOperation + " transport error", url, rootCauseMessage(exception));
-            throw new IntegrationException(buildTransportErrorMessage(url, exception, errorOperation), exception);
+            String errMsg = buildTransportErrorMessage(url, exception, errorOperation);
+            wsExtLogService.log(ProviderCallLog.builder()
+                    .uuid(uuid)
+                    .providerKey(PROVIDER_KEY)
+                    .wsKey(wsKey)
+                    .url(url)
+                    .requestJson(requestJson)
+                    .responseJson(null)
+                    .durationMs(System.currentTimeMillis() - startMs)
+                    .isError(true)
+                    .errorMessage(errMsg)
+                    .build());
+            throw new IntegrationException(errMsg, exception);
         }
 
         if (response == null) {
             throw new IntegrationException("Pega3 no retorno contenido para " + errorOperation);
         }
 
-        traceToConsole("Pega3 " + logOperation + " response", url, JsonUtil.toJsonSilently(response));
+        String responseJson = JsonUtil.toJsonSilently(response);
+        traceToConsole("Pega3 " + logOperation + " response", url, responseJson);
+        wsExtLogService.log(ProviderCallLog.builder()
+                .uuid(uuid)
+                .providerKey(PROVIDER_KEY)
+                .wsKey(wsKey)
+                .url(url)
+                .requestJson(requestJson)
+                .responseJson(responseJson)
+                .durationMs(System.currentTimeMillis() - startMs)
+                .isError(false)
+                .build());
         return response;
     }
 
@@ -365,7 +413,7 @@ public class Pega3WebClientAdapter implements
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {
-        AppProperties.ProviderProperties provider = appProperties.getIntegration().getProviders().get(PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = providerConfigService.getProviderProperties(PROVIDER_KEY);
         if (provider == null) {
             throw new IntegrationException("No existe configuracion para el proveedor Pega3");
         }
@@ -435,11 +483,9 @@ public class Pega3WebClientAdapter implements
 
     private void traceToConsole(String label, String url, String body) {
         log.info("{} url={} body={}", label, url, body);
-        System.out.println(label + " url=" + url + " body=" + body);
     }
 
     private void traceErrorToConsole(String label, String url, String body) {
         log.error("{} url={} body={}", label, url, body);
-        System.err.println(label + " url=" + url + " body=" + body);
     }
 }

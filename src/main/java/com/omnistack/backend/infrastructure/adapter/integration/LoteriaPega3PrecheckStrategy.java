@@ -9,6 +9,8 @@ import com.omnistack.backend.application.port.out.Pega3DrawQueryPort;
 import com.omnistack.backend.application.port.out.Pega3ProductQueryPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -38,12 +40,13 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
 
     private final Pega3ProductQueryPort pega3ProductQueryPort;
     private final Pega3DrawQueryPort pega3DrawQueryPort;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
-        AppProperties.ProviderProperties provider = findProviderProperties(appProperties, PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = findProviderProperties(providerConfigService, PROVIDER_KEY);
         return capability == Capability.PRECHECK
                 && provider != null
                 && serviceDefinition.getMovementType() == MovementType.CASH_IN
@@ -51,7 +54,7 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
+                && hasConfiguredOperation(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -59,9 +62,9 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             Capability capability) {
-        AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
+        AppProperties.ProviderProperties provider = getProviderProperties(providerConfigService, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
-        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
         String sorteoUrl = providerWsService.findUrl(PROVIDER_KEY, toWsKey(PRECHECK_SORTEO_KEY, serviceDefinition.getMovementType())).orElse(null);
 
         Pega3ProductQueryCommand productCommand = Pega3ProductQueryCommand.builder()

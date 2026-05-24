@@ -377,3 +377,49 @@ BEGIN
   END IF;
 END;
 /
+
+---------------------------------------------------------------
+-- 9) TABLA: IN_OMNI_PROVEEDOR_CONFIG
+--    Configuracion funcional a nivel proveedor: credenciales,
+--    canal, routing codes, geolocalizacion.
+--    Reemplaza app.integration.providers.* en
+--    application.properties eliminando env vars por proveedor.
+---------------------------------------------------------------
+CREATE TABLE TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG (
+  ID_CONFIG        NUMBER(12)     NOT NULL,
+  PROVEEDOR_KEY    VARCHAR2(50)   NOT NULL,  -- ecuabet | loteria | pega3 | tradicional | claro
+  CONFIG_KEY       VARCHAR2(200)  NOT NULL,  -- token | auth_username | canal | category_code | etc.
+  TIPO_CONFIG      VARCHAR2(50),             -- TEXTO | NUMERO | CREDENCIAL | FLAG
+  CONFIG_VALOR     VARCHAR2(4000),           -- valor siempre como texto; NUMERO se convierte en runtime
+  USR_CREACION     VARCHAR2(100)  DEFAULT USER    NOT NULL,
+  FEC_CREACION     DATE           DEFAULT SYSDATE NOT NULL,
+  USR_MODIFICACION VARCHAR2(100),
+  FEC_MODIFICACION DATE,
+
+  CONSTRAINT PK_IN_OMNI_PROVEEDOR_CONFIG
+    PRIMARY KEY (ID_CONFIG),
+  CONSTRAINT UX_IN_OMNI_PROVEEDOR_CONFIG_01
+    UNIQUE (PROVEEDOR_KEY, CONFIG_KEY)
+);
+
+CREATE SEQUENCE TUKUNAFUNC.SEQ_IN_OMNI_PROVEEDOR_CONFIG
+  START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+CREATE INDEX TUKUNAFUNC.IX_IN_OMNI_PROVEEDOR_CONFIG_01
+  ON TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG (PROVEEDOR_KEY);
+
+CREATE OR REPLACE TRIGGER TUKUNAFUNC.TRG_IN_OMNI_PROVEEDOR_CONFIG_BI
+BEFORE INSERT ON TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG
+FOR EACH ROW
+BEGIN
+  IF :NEW.ID_CONFIG IS NULL THEN
+    SELECT TUKUNAFUNC.SEQ_IN_OMNI_PROVEEDOR_CONFIG.NEXTVAL INTO :NEW.ID_CONFIG FROM DUAL;
+  END IF;
+END;
+/
+
+COMMENT ON TABLE  TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG IS 'Configuracion funcional por proveedor: credenciales, canal, routing codes. Reemplaza app.integration.providers.* en application.properties.';
+COMMENT ON COLUMN TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG.PROVEEDOR_KEY IS 'Clave interna del proveedor: ecuabet, loteria, pega3, tradicional, claro.';
+COMMENT ON COLUMN TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG.CONFIG_KEY    IS 'Nombre del parametro: token, auth_username, auth_password, canal, category_code, etc.';
+COMMENT ON COLUMN TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG.TIPO_CONFIG   IS 'Tipo de valor: TEXTO, NUMERO, CREDENCIAL (dato sensible), FLAG (booleano texto true/false).';
+COMMENT ON COLUMN TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG.CONFIG_VALOR  IS 'Valor del parametro como texto. Para NUMERO se parsea en runtime.';

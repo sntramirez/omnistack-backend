@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.omnistack.backend.application.dto.PrecheckRequest;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
+import java.util.Set;
 import com.omnistack.backend.domain.enums.ChannelPos;
 import com.omnistack.backend.domain.enums.MovementType;
 import com.omnistack.backend.domain.model.CatalogSnapshot;
@@ -97,18 +98,20 @@ class DefaultProviderFlowResolverTest {
         provider.setCategoryCode("1");
         provider.setSubcategoryCode("1");
         provider.setServiceProviderCode("2");
-        AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
-        capabilityProperties.getCashin().setItem("100708850");
-        provider.getServices().put("PRECHECK", capabilityProperties);
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().getProviders().put("loteria", provider);
+
+        ProviderConfigService configService = Mockito.mock(ProviderConfigService.class);
+        Mockito.when(configService.getProviderProperties("loteria")).thenReturn(provider);
+
+        ProviderWsDefsService defsService = Mockito.mock(ProviderWsDefsService.class);
+        Mockito.when(defsService.getString("loteria", "PRECHECK.CASHIN", "item")).thenReturn("100708850");
 
         ProviderWsService wsService = Mockito.mock(ProviderWsService.class);
         Mockito.when(wsService.hasUrl("loteria", "PRECHECK.CASHIN")).thenReturn(true);
 
         LoteriaBet593PrecheckStrategy realStrategy = new LoteriaBet593PrecheckStrategy(
                 (command, operationPath) -> null,
-                appProperties,
+                configService,
+                defsService,
                 wsService);
         DefaultProviderFlowResolver resolver = new DefaultProviderFlowResolver(
                 cacheService,

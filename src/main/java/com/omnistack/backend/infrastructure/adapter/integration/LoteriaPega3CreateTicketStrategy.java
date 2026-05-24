@@ -9,6 +9,8 @@ import com.omnistack.backend.application.dto.StatusDetail;
 import com.omnistack.backend.application.port.out.Pega3CreateTicketPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.CreateTicketStrategy;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -35,12 +37,13 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
     private static final String PROVIDER_NAME = "Loteria Pega3";
 
     private final Pega3CreateTicketPort pega3CreateTicketPort;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
-        AppProperties.ProviderProperties provider = findProviderProperties(appProperties, PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = findProviderProperties(providerConfigService, PROVIDER_KEY);
         return capability == Capability.CREATE_TICKET
                 && provider != null
                 && serviceDefinition.getMovementType() == MovementType.CASH_IN
@@ -48,7 +51,7 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
+                && hasConfiguredOperation(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -56,7 +59,7 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             Capability capability) {
-        AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
+        AppProperties.ProviderProperties provider = getProviderProperties(providerConfigService, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
 
         if (!(request instanceof CreateTicketRequest createTicketRequest)) {
@@ -66,7 +69,7 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
             throw new IntegrationException("Pega3 requiere ticket_data para crear ticket");
         }
 
-        String operationUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
+        String operationUrl = getRequiredOperationUrl(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
 
         List<Pega3Panel> panels = buildDomainPanels(createTicketRequest.getTicketData().getPanels());
 

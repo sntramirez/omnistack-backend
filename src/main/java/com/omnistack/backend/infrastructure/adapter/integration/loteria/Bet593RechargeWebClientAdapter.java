@@ -6,9 +6,12 @@ import com.omnistack.backend.application.port.in.ProviderTokenResolverUseCase;
 import com.omnistack.backend.application.port.out.Bet593RechargePort;
 import com.omnistack.backend.application.port.out.Bet593RechargeReversePort;
 import com.omnistack.backend.application.port.out.Bet593RechargeValidationPort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.WsExtLogService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.model.Bet593RechargeCommand;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
+import com.omnistack.backend.domain.model.ProviderCallLog;
 import com.omnistack.backend.infrastructure.adapter.integration.loteria.dto.Bet593RechargeRequest;
 import com.omnistack.backend.infrastructure.adapter.integration.loteria.dto.Bet593RechargeReverseRequest;
 import com.omnistack.backend.infrastructure.adapter.integration.loteria.dto.Bet593RechargeResponse;
@@ -37,11 +40,15 @@ import reactor.core.publisher.Mono;
 public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet593RechargeValidationPort, Bet593RechargeReversePort {
 
     private static final String PROVIDER_KEY = "loteria";
+    private static final String WS_KEY_PRECHECK = "PRECHECK.CASHIN";
+    private static final String WS_KEY_EXECUTE = "EXECUTE.CASHIN";
+    private static final String WS_KEY_REVERSE = "REVERSE.CASHIN";
 
     private final WebClient omnistackWebClient;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
     private final ObjectMapper objectMapper;
     private final ProviderTokenResolverUseCase providerTokenResolverUseCase;
+    private final WsExtLogService wsExtLogService;
 
     /**
      * Ejecuta el consumo externo de recarga BET593.
@@ -58,7 +65,9 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
                 provider,
                 forceRefreshToken -> buildExternalRequest(command, provider, forceRefreshToken),
                 "recharge",
-                "recarga BET593");
+                "recarga BET593",
+                command.getUuid(),
+                WS_KEY_EXECUTE);
     }
 
     /**
@@ -76,7 +85,9 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
                 provider,
                 forceRefreshToken -> buildExternalValidationRequest(command, provider, forceRefreshToken),
                 "validate recharge",
-                "validacion de recarga BET593");
+                "validacion de recarga BET593",
+                command.getUuid(),
+                WS_KEY_PRECHECK);
     }
 
     /**
@@ -94,7 +105,9 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
                 provider,
                 forceRefreshToken -> buildExternalReverseRequest(command, provider, forceRefreshToken),
                 "reverse recharge",
-                "reverso de recarga BET593");
+                "reverso de recarga BET593",
+                command.getUuid(),
+                WS_KEY_REVERSE);
     }
 
     private ExternalTransactionResponse invokeLoteria(
@@ -102,16 +115,18 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
             AppProperties.ProviderProperties provider,
             Function<Boolean, Object> requestFactory,
             String logOperation,
-            String errorOperation) {
+            String errorOperation,
+            String uuid,
+            String wsKey) {
         String url = operationPath;
         Object request = requestFactory.apply(false);
-        Bet593RechargeResponse response = executeLoteriaRequest(request, url, logOperation, errorOperation);
+        Bet593RechargeResponse response = executeLoteriaRequest(request, url, logOperation, errorOperation, uuid, wsKey);
 
         if (isInvalidTokenResponse(response)) {
             traceToConsole("Loteria BET593 " + logOperation + " token refresh", url,
                     "Token invalido detectado; regenerando token y reintentando");
             request = requestFactory.apply(true);
-            response = executeLoteriaRequest(request, url, logOperation + " retry", errorOperation);
+            response = executeLoteriaRequest(request, url, logOperation + " retry", errorOperation, uuid, wsKey);
         }
 
         if (response == null) {
@@ -132,8 +147,12 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
             Object request,
             String url,
             String logOperation,
-            String errorOperation) {
-        traceToConsole("Loteria BET593 " + logOperation + " request", url, JsonUtil.toJsonSilently(request));
+            String errorOperation,
+            String uuid,
+            String wsKey) {
+        long startMs = System.currentTimeMillis();
+        String requestJson = JsonUtil.toJsonSilently(request);
+        traceToConsole("Loteria BET593 " + logOperation + " request", url, requestJson);
 
         Bet593RechargeResponse response;
         try {
@@ -146,6 +165,17 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
                             .defaultIfEmpty("")
                             .flatMap(body -> {
                                 traceErrorToConsole("Loteria BET593 " + logOperation + " error", url, body);
+                                wsExtLogService.log(ProviderCallLog.builder()
+                                        .uuid(uuid)
+                                        .providerKey(PROVIDER_KEY)
+                                        .wsKey(wsKey)
+                                        .url(url)
+                                        .requestJson(requestJson)
+                                        .responseJson(body)
+                                        .durationMs(System.currentTimeMillis() - startMs)
+                                        .isError(true)
+                                        .errorMessage(buildErrorMessage(body, errorOperation))
+                                        .build());
                                 return Mono.error(new IntegrationException(buildErrorMessage(body, errorOperation)));
                             }))
                     .bodyToMono(String.class)
@@ -153,7 +183,30 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
                     .block();
         } catch (WebClientRequestException exception) {
             traceErrorToConsole("Loteria BET593 " + logOperation + " transport error", url, rootCauseMessage(exception));
+            wsExtLogService.log(ProviderCallLog.builder()
+                    .uuid(uuid)
+                    .providerKey(PROVIDER_KEY)
+                    .wsKey(wsKey)
+                    .url(url)
+                    .requestJson(requestJson)
+                    .responseJson(null)
+                    .durationMs(System.currentTimeMillis() - startMs)
+                    .isError(true)
+                    .errorMessage(buildTransportErrorMessage(url, exception, errorOperation))
+                    .build());
             throw new IntegrationException(buildTransportErrorMessage(url, exception, errorOperation), exception);
+        }
+        if (response != null) {
+            wsExtLogService.log(ProviderCallLog.builder()
+                    .uuid(uuid)
+                    .providerKey(PROVIDER_KEY)
+                    .wsKey(wsKey)
+                    .url(url)
+                    .requestJson(requestJson)
+                    .responseJson(JsonUtil.toJsonSilently(response))
+                    .durationMs(System.currentTimeMillis() - startMs)
+                    .isError(false)
+                    .build());
         }
         return response;
     }
@@ -380,8 +433,7 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
     }
 
     private AppProperties.ProviderProperties getProviderProperties() {
-        Map<String, AppProperties.ProviderProperties> providers = appProperties.getIntegration().getProviders();
-        AppProperties.ProviderProperties provider = providers.get(PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = providerConfigService.getProviderProperties(PROVIDER_KEY);
         if (provider == null) {
             throw new IntegrationException("No existe configuracion para el proveedor Loteria");
         }
@@ -409,11 +461,9 @@ public class Bet593RechargeWebClientAdapter implements Bet593RechargePort, Bet59
 
     private void traceToConsole(String label, String url, String body) {
         log.info("{} url={} body={}", label, url, body);
-        System.out.println(label + " url=" + url + " body=" + body);
     }
 
     private void traceErrorToConsole(String label, String url, String body) {
         log.error("{} url={} body={}", label, url, body);
-        System.err.println(label + " url=" + url + " body=" + body);
     }
 }

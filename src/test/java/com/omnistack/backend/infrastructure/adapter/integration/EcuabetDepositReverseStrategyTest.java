@@ -12,6 +12,8 @@ import static org.mockito.Mockito.when;
 import com.omnistack.backend.application.dto.ReverseRequest;
 import com.omnistack.backend.application.dto.ReverseResponse;
 import com.omnistack.backend.application.port.out.EcuabetDepositReversePort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -22,10 +24,8 @@ import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ServiceDefinition;
 import com.omnistack.backend.shared.exception.IntegrationException;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +42,10 @@ class EcuabetDepositReverseStrategyTest {
     @Mock
     private EcuabetDepositReversePort ecuabetDepositReversePort;
     @Mock
+    private ProviderConfigService providerConfigService;
+    @Mock
+    private ProviderWsDefsService providerWsDefsService;
+    @Mock
     private ProviderWsService providerWsService;
 
     private EcuabetDepositReverseStrategy strategy;
@@ -52,17 +56,14 @@ class EcuabetDepositReverseStrategyTest {
         provider.setCategoryCode("1");
         provider.setSubcategoryCode("1");
         provider.setServiceProviderCode("1");
-        AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
-        capabilityProperties.getCashin().setItem("100713841");
-        provider.getServices().put("REVERSE", capabilityProperties);
 
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().setProviders(new HashMap<>(Map.of("ecuabet", provider)));
+        when(providerConfigService.getProviderProperties("ecuabet")).thenReturn(provider);
+        when(providerWsDefsService.getString("ecuabet", "REVERSE.CASHIN", "item")).thenReturn("100713841");
 
         when(providerWsService.hasUrl("ecuabet", "REVERSE.CASHIN")).thenReturn(true);
         when(providerWsService.requireUrl(any(), any(), any())).thenReturn("/rollback/deposit");
 
-        strategy = new EcuabetDepositReverseStrategy(ecuabetDepositReversePort, appProperties, providerWsService);
+        strategy = new EcuabetDepositReverseStrategy(ecuabetDepositReversePort, providerConfigService, providerWsDefsService, providerWsService);
     }
 
     @Test

@@ -12,6 +12,8 @@ import com.omnistack.backend.application.port.out.TradicionalNumerosQueryPort;
 import com.omnistack.backend.application.port.out.TradicionalSorteosQueryPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -51,12 +53,13 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
     private final TradicionalSorteosQueryPort sorteosQueryPort;
     private final TradicionalFigurasQueryPort figurasQueryPort;
     private final TradicionalNumerosQueryPort numerosQueryPort;
-    private final AppProperties appProperties;
+    private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
-        AppProperties.ProviderProperties provider = findProviderProperties(appProperties, PROVIDER_KEY);
+        AppProperties.ProviderProperties provider = findProviderProperties(providerConfigService, PROVIDER_KEY);
         return capability == Capability.PRECHECK
                 && provider != null
                 && serviceDefinition.getMovementType() == MovementType.CASH_IN
@@ -64,7 +67,7 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && hasConfiguredOperation(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition);
+                && hasConfiguredOperation(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition);
     }
 
     @Override
@@ -72,10 +75,10 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             Capability capability) {
-        AppProperties.ProviderProperties provider = getProviderProperties(appProperties, PROVIDER_KEY, PROVIDER_NAME);
+        AppProperties.ProviderProperties provider = getProviderProperties(providerConfigService, PROVIDER_KEY, PROVIDER_NAME);
         validateBusinessContext(request, serviceDefinition, provider);
 
-        String juegosUrl = getRequiredOperationUrl(provider, providerWsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
+        String juegosUrl = getRequiredOperationUrl(providerWsService, providerWsDefsService, PROVIDER_KEY, capability, serviceDefinition, PROVIDER_NAME);
         String sorteosUrl = providerWsService.findUrl(PROVIDER_KEY, toWsKey(PRECHECK_SORTEOS_KEY, serviceDefinition.getMovementType())).orElse(null);
         String figurasUrl = providerWsService.findUrl(PROVIDER_KEY, toWsKey(PRECHECK_FIGURAS_KEY, serviceDefinition.getMovementType())).orElse(null);
         String numerosUrl = providerWsService.findUrl(PROVIDER_KEY, toWsKey(PRECHECK_NUMEROS_KEY, serviceDefinition.getMovementType())).orElse(null);

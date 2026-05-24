@@ -12,6 +12,7 @@ import com.omnistack.backend.shared.exception.BusinessException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -21,7 +22,7 @@ class ProviderTokenServiceTest {
     @Test
     void shouldReturnConfiguredStaticToken() {
         ProviderTokenService service = new ProviderTokenService(
-                appPropertiesWithStaticProvider(),
+                providerConfigServiceWithStaticProvider(),
                 command -> ProviderTokenLoginResult.builder().token("unused").build(),
                 Mockito.mock(ProviderWsService.class),
                 fixedClock());
@@ -38,7 +39,7 @@ class ProviderTokenServiceTest {
                 .token("dynamic-token-" + loginCalls.incrementAndGet())
                 .build();
         ProviderTokenService service = new ProviderTokenService(
-                appPropertiesWithDynamicProvider(),
+                providerConfigServiceWithDynamicProvider(),
                 loginPort,
                 Mockito.mock(ProviderWsService.class),
                 fixedClock());
@@ -61,7 +62,7 @@ class ProviderTokenServiceTest {
         Mockito.when(providerWsService.requireUrl(Mockito.anyString(), Mockito.eq("LOGIN"), Mockito.anyString()))
                 .thenReturn("http://mock-login-url");
         ProviderTokenService service = new ProviderTokenService(
-                appPropertiesWithDynamicProvider(),
+                providerConfigServiceWithDynamicProvider(),
                 loginPort,
                 providerWsService,
                 fixedClock());
@@ -83,7 +84,7 @@ class ProviderTokenServiceTest {
                 .token(command.getCategoryCode() + "-" + command.getSubcategoryCode() + "-" + loginCalls.incrementAndGet())
                 .build();
         ProviderTokenService service = new ProviderTokenService(
-                appPropertiesWithGenericAndSpecificDynamicProviders(),
+                providerConfigServiceWithGenericAndSpecificDynamicProviders(),
                 loginPort,
                 Mockito.mock(ProviderWsService.class),
                 fixedClock());
@@ -96,7 +97,7 @@ class ProviderTokenServiceTest {
     @Test
     void shouldRejectManualRefreshForStaticProvider() {
         ProviderTokenService service = new ProviderTokenService(
-                appPropertiesWithStaticProvider(),
+                providerConfigServiceWithStaticProvider(),
                 command -> ProviderTokenLoginResult.builder().token("unused").build(),
                 Mockito.mock(ProviderWsService.class),
                 fixedClock());
@@ -112,7 +113,7 @@ class ProviderTokenServiceTest {
         return Clock.fixed(Instant.parse("2026-04-24T16:00:00Z"), ZoneId.of("America/Guayaquil"));
     }
 
-    private AppProperties appPropertiesWithStaticProvider() {
+    private ProviderConfigService providerConfigServiceWithStaticProvider() {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
         provider.setProviderName("ECUABET");
         provider.setCategoryCode("1");
@@ -121,12 +122,13 @@ class ProviderTokenServiceTest {
         provider.setToken("ecuabet-static-token");
         provider.getAuth().setMode("STATIC");
 
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().getProviders().put("ecuabet", provider);
-        return appProperties;
+        ProviderConfigService configService = Mockito.mock(ProviderConfigService.class);
+        Mockito.when(configService.allProviderKeys()).thenReturn(Set.of("ecuabet"));
+        Mockito.when(configService.getProviderProperties("ecuabet")).thenReturn(provider);
+        return configService;
     }
 
-    private AppProperties appPropertiesWithDynamicProvider() {
+    private ProviderConfigService providerConfigServiceWithDynamicProvider() {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
         provider.setProviderName("LOTERIA NACIONAL");
         provider.setCategoryCode("1");
@@ -138,12 +140,13 @@ class ProviderTokenServiceTest {
         provider.getAuth().getLogin().setPassword("F3m993sA.");
         provider.getAuth().getLogin().setProductToSell("Bet593");
 
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().getProviders().put("loteria", provider);
-        return appProperties;
+        ProviderConfigService configService = Mockito.mock(ProviderConfigService.class);
+        Mockito.when(configService.allProviderKeys()).thenReturn(Set.of("loteria"));
+        Mockito.when(configService.getProviderProperties("loteria")).thenReturn(provider);
+        return configService;
     }
 
-    private AppProperties appPropertiesWithGenericAndSpecificDynamicProviders() {
+    private ProviderConfigService providerConfigServiceWithGenericAndSpecificDynamicProviders() {
         AppProperties.ProviderProperties genericProvider = new AppProperties.ProviderProperties();
         genericProvider.setProviderName("LOTERIA NACIONAL");
         genericProvider.setServiceProviderCode("2");
@@ -164,9 +167,10 @@ class ProviderTokenServiceTest {
         specificProvider.getAuth().getLogin().setPassword("specific-password");
         specificProvider.getAuth().getLogin().setProductToSell("Specific");
 
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().getProviders().put("loteria-generic", genericProvider);
-        appProperties.getIntegration().getProviders().put("loteria-specific", specificProvider);
-        return appProperties;
+        ProviderConfigService configService = Mockito.mock(ProviderConfigService.class);
+        Mockito.when(configService.allProviderKeys()).thenReturn(Set.of("loteria-generic", "loteria-specific"));
+        Mockito.when(configService.getProviderProperties("loteria-generic")).thenReturn(genericProvider);
+        Mockito.when(configService.getProviderProperties("loteria-specific")).thenReturn(specificProvider);
+        return configService;
     }
 }

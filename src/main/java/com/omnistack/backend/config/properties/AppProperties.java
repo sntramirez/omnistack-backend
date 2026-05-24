@@ -18,7 +18,6 @@ public class AppProperties {
     private Catalog catalog = new Catalog();
     private BusinessLines businessLines = new BusinessLines();
     private Integrations integrations = new Integrations();
-    private Integration integration = new Integration();
     private Datasource datasource = new Datasource();
 
     /**
@@ -126,14 +125,6 @@ public class AppProperties {
     }
 
     /**
-     * Propiedades por proveedor externo.
-     */
-    @Data
-    public static class Integration {
-        private Map<String, ProviderProperties> providers = new HashMap<>();
-    }
-
-    /**
      * Configuracion funcional de un proveedor externo.
      */
     @Data
@@ -169,7 +160,6 @@ public class AppProperties {
         private String parish;
         private Map<String, String> offerIds = new HashMap<>();
         private ProviderTokenProperties auth = new ProviderTokenProperties();
-        private Map<String, ProviderCapabilityProperties> services = new HashMap<>();
     }
 
     /**
@@ -193,21 +183,4 @@ public class AppProperties {
         private String productToSell;
     }
 
-    /**
-     * Configuracion de operaciones por capacidad y movimiento.
-     */
-    @Data
-    public static class ProviderCapabilityProperties {
-        private ProviderOperationProperties cashin = new ProviderOperationProperties();
-        private ProviderOperationProperties cashout = new ProviderOperationProperties();
-    }
-
-    /**
-     * Configuracion de una operacion externa concreta.
-     * Solo contiene el item (rms_item_code) para routing; la URL viene de IN_OMNI_PROVEEDOR_WS.
-     */
-    @Data
-    public static class ProviderOperationProperties {
-        private String item;
-    }
 }

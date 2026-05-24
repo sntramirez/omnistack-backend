@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 import com.omnistack.backend.application.dto.ExecuteRequest;
 import com.omnistack.backend.application.dto.ExecuteResponse;
 import com.omnistack.backend.application.port.out.EcuabetWithdrawPort;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -23,10 +25,8 @@ import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ServiceDefinition;
 import com.omnistack.backend.shared.exception.IntegrationException;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +43,10 @@ class EcuabetWithdrawExecuteStrategyTest {
     @Mock
     private EcuabetWithdrawPort ecuabetWithdrawPort;
     @Mock
+    private ProviderConfigService providerConfigService;
+    @Mock
+    private ProviderWsDefsService providerWsDefsService;
+    @Mock
     private ProviderWsService providerWsService;
 
     private EcuabetWithdrawExecuteStrategy strategy;
@@ -53,17 +57,14 @@ class EcuabetWithdrawExecuteStrategyTest {
         provider.setCategoryCode("1");
         provider.setSubcategoryCode("1");
         provider.setServiceProviderCode("1");
-        AppProperties.ProviderCapabilityProperties capabilityProperties = new AppProperties.ProviderCapabilityProperties();
-        capabilityProperties.getCashout().setItem("100708846");
-        provider.getServices().put("EXECUTE", capabilityProperties);
 
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().setProviders(new HashMap<>(Map.of("ecuabet", provider)));
+        when(providerConfigService.getProviderProperties("ecuabet")).thenReturn(provider);
+        when(providerWsDefsService.getString("ecuabet", "EXECUTE.CASHOUT", "item")).thenReturn("100708846");
 
         when(providerWsService.hasUrl("ecuabet", "EXECUTE.CASHOUT")).thenReturn(true);
         when(providerWsService.requireUrl(any(), any(), any())).thenReturn("/user/withdraw");
 
-        strategy = new EcuabetWithdrawExecuteStrategy(ecuabetWithdrawPort, appProperties, providerWsService);
+        strategy = new EcuabetWithdrawExecuteStrategy(ecuabetWithdrawPort, providerConfigService, providerWsDefsService, providerWsService);
     }
 
     @Test

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.WsExtLogService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.ChannelPos;
 import com.omnistack.backend.domain.enums.MovementType;
@@ -18,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.web.reactive.function.client.WebClient;
 
 class EcuabetUserSearchWebClientAdapterTest {
@@ -57,9 +60,9 @@ class EcuabetUserSearchWebClientAdapterTest {
 
         EcuabetUserSearchWebClientAdapter adapter = new EcuabetUserSearchWebClientAdapter(
                 WebClient.builder().build(),
-                appProperties("http://localhost:" + server.getAddress().getPort()),
+                providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test");
+                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test", Mockito.mock(WsExtLogService.class));
 
         var response = adapter.searchUser(EcuabetUserSearchCommand.builder()
                 .chain("1")
@@ -100,9 +103,9 @@ class EcuabetUserSearchWebClientAdapterTest {
 
         EcuabetUserSearchWebClientAdapter adapter = new EcuabetUserSearchWebClientAdapter(
                 WebClient.builder().build(),
-                appProperties("http://localhost:" + server.getAddress().getPort()),
+                providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test");
+                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test", Mockito.mock(WsExtLogService.class));
 
         var response = adapter.searchUser(EcuabetUserSearchCommand.builder()
                 .chain("60")
@@ -139,9 +142,9 @@ class EcuabetUserSearchWebClientAdapterTest {
 
         EcuabetUserSearchWebClientAdapter adapter = new EcuabetUserSearchWebClientAdapter(
                 WebClient.builder().build(),
-                appProperties("http://localhost:" + server.getAddress().getPort()),
+                providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test");
+                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test", Mockito.mock(WsExtLogService.class));
 
         var response = adapter.searchUser(EcuabetUserSearchCommand.builder()
                 .chain("60")
@@ -176,9 +179,9 @@ class EcuabetUserSearchWebClientAdapterTest {
 
         EcuabetUserSearchWebClientAdapter adapter = new EcuabetUserSearchWebClientAdapter(
                 WebClient.builder().build(),
-                appProperties("http://localhost:" + server.getAddress().getPort()),
+                providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test");
+                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test", Mockito.mock(WsExtLogService.class));
 
         var response = adapter.searchUser(EcuabetUserSearchCommand.builder()
                 .chain("60")
@@ -218,14 +221,14 @@ class EcuabetUserSearchWebClientAdapterTest {
         return new String(bodyStream.readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    private AppProperties appProperties(String baseUrl) {
+    private ProviderConfigService providerConfigService() {
         AppProperties.ProviderProperties provider = new AppProperties.ProviderProperties();
         provider.setShopId("998739");
         provider.setCountry(66);
         provider.setServiceProviderCode("1");
 
-        AppProperties appProperties = new AppProperties();
-        appProperties.getIntegration().getProviders().put("ecuabet", provider);
-        return appProperties;
+        ProviderConfigService mock = Mockito.mock(ProviderConfigService.class);
+        Mockito.when(mock.getProviderProperties("ecuabet")).thenReturn(provider);
+        return mock;
     }
 }
