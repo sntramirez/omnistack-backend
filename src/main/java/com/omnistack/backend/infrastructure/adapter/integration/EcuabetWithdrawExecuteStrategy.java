@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
@@ -136,7 +137,7 @@ public class EcuabetWithdrawExecuteStrategy extends AbstractProviderStrategy imp
                     .build());
         } else {
             builder.authorization(resolveValue(payload, "authorization", String.valueOf(transactionId)))
-                    .status(new StatusDetail(externalResponse.getExternalCode(), "Transaccion correcta"));
+                    .status(new StatusDetail(StatusCodes.SUCCESS, "Transaccion correcta"));
         }
 
         return builder.build();

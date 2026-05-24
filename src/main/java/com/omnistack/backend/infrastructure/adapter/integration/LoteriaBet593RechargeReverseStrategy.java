@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
@@ -133,7 +134,7 @@ public class LoteriaBet593RechargeReverseStrategy extends AbstractProviderStrate
                     .build());
         } else {
             builder.authorization(resolveValue(payload, "authorization", request.getAuthorization()))
-                    .status(new StatusDetail(externalResponse.getExternalCode(), "Transacci\u00F3n correcta"));
+                    .status(new StatusDetail(StatusCodes.SUCCESS, "Transacci\u00F3n correcta"));
         }
 
         return builder.build();

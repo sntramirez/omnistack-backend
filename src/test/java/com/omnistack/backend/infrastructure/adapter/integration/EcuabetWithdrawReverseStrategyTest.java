@@ -85,7 +85,7 @@ class EcuabetWithdrawReverseStrategyTest {
                 .payload(Map.of(
                         "error", 0,
                         "code", "0",
-                        "amount", new BigDecimal("20.00"),
+                        "amount", new BigDecimal("25.5000"),
                         "authorization", "41472",
                         "providerTransactionId", "41472"))
                 .build());
@@ -124,8 +124,8 @@ class EcuabetWithdrawReverseStrategyTest {
         assertNotNull(captor.getValue().getTransactionId());
         assertEquals("41472", response.getAuthorization());
         assertEquals("0912345678", response.getDocument());
-        assertEquals(new BigDecimal("20.00"), response.getAmount());
-        assertEquals("0", response.getStatus().getCode());
+        assertEquals(new BigDecimal("25.5000"), response.getAmount());
+        assertEquals("00", response.getStatus().getCode());
     }
 
     @Test

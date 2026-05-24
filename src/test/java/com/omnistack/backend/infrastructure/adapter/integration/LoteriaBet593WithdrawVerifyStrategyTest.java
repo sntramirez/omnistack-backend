@@ -101,7 +101,7 @@ class LoteriaBet593WithdrawVerifyStrategyTest {
         assertEquals("uuid-bet593-cashout-verify", captor.getValue().getUuid());
         assertEquals("340468406359", captor.getValue().getWithdrawId());
         assertEquals("0901111112", captor.getValue().getDocument());
-        assertEquals("0", response.getStatus().getCode());
+        assertEquals("00", response.getStatus().getCode());
         assertEquals("Transaccion correcta", response.getStatus().getMessage());
         assertEquals("0901111112", response.getDocument());
     }
@@ -123,7 +123,7 @@ class LoteriaBet593WithdrawVerifyStrategyTest {
                 Capability.VERIFY);
 
         assertFalse(response.isErrorFlag());
-        assertEquals("400022", response.getStatus().getCode());
+        assertEquals("00", response.getStatus().getCode());
         assertEquals("Transaccion correcta", response.getStatus().getMessage());
         assertEquals("0901111112", response.getDocument());
     }

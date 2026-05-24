@@ -75,10 +75,7 @@ public class EcuabetPrecheckStrategy extends AbstractProviderStrategy implements
                 .amount(request.getAmount())
                 .build();
 
-        ExternalTransactionResponse externalResponse = validateCashoutAmount(
-                request,
-                serviceDefinition,
-                ecuabetUserSearchPort.searchUser(command, operationUrl));
+        ExternalTransactionResponse externalResponse = ecuabetUserSearchPort.searchUser(command, operationUrl);
         return ResponseFactory.transactionResponse(request, externalResponse, capability);
     }
 

@@ -89,7 +89,7 @@ class EcuabetDepositExecuteStrategyTest {
                         "lastname", "Perez",
                         "currency", "USD",
                         "authorization", "91081",
-                        "amount", new BigDecimal("99999.00")))
+                        "amount", new BigDecimal("100000.0000")))
                 .build());
 
         ExecuteRequest request = ExecuteRequest.builder()
@@ -126,8 +126,8 @@ class EcuabetDepositExecuteStrategyTest {
         assertEquals("Perez", response.getLastname());
         assertEquals("USD", response.getCurrency());
         assertEquals("0912345678", response.getDocument());
-        assertEquals(new BigDecimal("99999.00"), response.getAmount());
-        assertEquals("0", response.getStatus().getCode());
+        assertEquals(new BigDecimal("100000.0000"), response.getAmount());
+        assertEquals("00", response.getStatus().getCode());
     }
 
     @Test

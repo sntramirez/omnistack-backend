@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
@@ -128,7 +129,7 @@ public class LoteriaPega3ExecuteStrategy extends AbstractProviderStrategy implem
                     .message(externalResponse.getExternalMessage())
                     .build());
         } else {
-            builder.status(new StatusDetail(externalResponse.getExternalCode(), "Pago de ticket Pega3 completado"));
+            builder.status(new StatusDetail(StatusCodes.SUCCESS, "Pago de ticket Pega3 completado"));
         }
 
         return builder.build();

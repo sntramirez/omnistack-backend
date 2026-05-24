@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
@@ -135,7 +136,7 @@ public class LoteriaBet593VerifyStrategy extends AbstractProviderStrategy implem
         } else {
             builder.authorization(resolveValue(payload, "authorization", null))
                     .serialnumber(resolveValue(payload, "serialnumber", null))
-                    .status(new StatusDetail(externalResponse.getExternalCode(), resolveStatusMessage(payload)));
+                    .status(new StatusDetail(StatusCodes.SUCCESS, resolveStatusMessage(payload)));
         }
 
         return builder.build();

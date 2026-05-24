@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
@@ -132,7 +133,7 @@ public class LoteriaPega3ReverseStrategy extends AbstractProviderStrategy implem
                     .message(externalResponse.getExternalMessage())
                     .build());
         } else {
-            builder.status(new StatusDetail(externalResponse.getExternalCode(), "Cancelacion ticket Pega3 completada"));
+            builder.status(new StatusDetail(StatusCodes.SUCCESS, "Cancelacion ticket Pega3 completada"));
         }
 
         return builder.build();

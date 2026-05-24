@@ -1,6 +1,8 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
+import com.omnistack.backend.shared.validation.ExternalAmountValidation;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionResponse;
@@ -107,8 +109,10 @@ public class LoteriaBet593WithdrawExecuteStrategy extends AbstractProviderStrate
 
     private ExecuteResponse buildResponse(BaseTransactionRequest request, ExternalTransactionResponse externalResponse) {
         Map<String, Object> payload = externalResponse.getPayload();
+        ExternalAmountValidation.Result amountValidation = ExternalAmountValidation.compare(request, payload);
         boolean isError = !externalResponse.isApproved()
-                || stringValue(payload, "message") != null && !stringValue(payload, "message").isBlank();
+                || stringValue(payload, "message") != null && !stringValue(payload, "message").isBlank()
+                || amountValidation.hasMismatch();
 
         ExecuteResponse.ExecuteResponseBuilder<?, ?> builder = ExecuteResponse.builder()
                 .chain(request.getChain())
@@ -127,17 +131,21 @@ public class LoteriaBet593WithdrawExecuteStrategy extends AbstractProviderStrate
                 .currency(stringValue(payload, "currency"))
                 .userid(resolveValue(payload, "userid", request.getUserid()))
                 .document(resolveValue(payload, "document", request.getDocument()))
-                .amount(resolveAmount(payload, request));
+                .amount(amountValidation.externalAmount() != null ? amountValidation.externalAmount() : resolveAmount(payload, request));
 
         if (isError) {
             builder.error(ErrorDetail.builder()
-                    .code(CanonicalErrorCodeMapper.resolve(externalResponse))
-                    .message(externalResponse.getExternalMessage())
+                    .code(amountValidation.hasMismatch()
+                            ? StatusCodes.VALIDATION_FAILED
+                            : CanonicalErrorCodeMapper.resolve(externalResponse))
+                    .message(amountValidation.hasMismatch()
+                            ? amountValidation.mismatchMessage()
+                            : externalResponse.getExternalMessage())
                     .build());
         } else {
             builder.authorization(resolveValue(payload, "authorization", request.getAuthorization()))
                     .serialnumber(resolveValue(payload, "serialnumber", request.getSerialnumber()))
-                    .status(new StatusDetail(externalResponse.getExternalCode(), "Transaccion correcta"));
+                    .status(new StatusDetail(StatusCodes.SUCCESS, "Transaccion correcta"));
         }
 
         return builder.build();

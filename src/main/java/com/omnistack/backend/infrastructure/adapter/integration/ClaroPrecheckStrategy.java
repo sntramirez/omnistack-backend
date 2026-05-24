@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
@@ -127,7 +128,7 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
                     .message(externalResponse.getExternalMessage())
                     .build());
         } else {
-            builder.status(new StatusDetail(externalResponse.getExternalCode(), "Validacion CLARO completada"));
+            builder.status(new StatusDetail(StatusCodes.SUCCESS, "Validacion CLARO completada"));
         }
 
         return builder.build();

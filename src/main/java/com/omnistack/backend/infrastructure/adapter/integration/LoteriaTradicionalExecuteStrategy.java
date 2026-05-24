@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
@@ -143,7 +144,7 @@ public class LoteriaTradicionalExecuteStrategy extends AbstractProviderStrategy 
                     .message(externalResponse.getExternalMessage())
                     .build());
         } else {
-            builder.status(new StatusDetail(externalResponse.getExternalCode(), "Venta boleto Tradicionales completada"));
+            builder.status(new StatusDetail(StatusCodes.SUCCESS, "Venta boleto Tradicionales completada"));
         }
 
         return builder.build();

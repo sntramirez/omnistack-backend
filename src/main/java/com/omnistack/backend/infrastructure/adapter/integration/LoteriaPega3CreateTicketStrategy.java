@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration;
 
+import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
@@ -139,7 +140,7 @@ public class LoteriaPega3CreateTicketStrategy extends AbstractProviderStrategy i
                     .message(externalResponse.getExternalMessage())
                     .build());
         } else {
-            builder.status(new StatusDetail(externalResponse.getExternalCode(), "Ticket creado correctamente"));
+            builder.status(new StatusDetail(StatusCodes.SUCCESS, "Ticket creado correctamente"));
         }
 
         return builder.build();
