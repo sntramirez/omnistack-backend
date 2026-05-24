@@ -20,7 +20,7 @@ public class WsExtLogService {
             wsExtLogPort.log(entry);
         } catch (Exception ex) {
             log.warn("Error al registrar WS_EXT log uuid={} wsKey={}: {}",
-                    entry.getUuid(), entry.getWsKey(), ex.getMessage());
+                    entry.getUuid(), entry.getWsKey(), ex.getMessage(), ex);
         }
     }
 }

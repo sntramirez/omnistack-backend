@@ -121,6 +121,7 @@ public class AppProperties {
             private String username;
             private String password;
             private String driverClassName;
+            private String schema = "GPF_OMNISTACK";
         }
     }
 

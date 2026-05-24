@@ -11,6 +11,7 @@ import com.omnistack.backend.application.port.out.Pega3ProductQueryPort;
 import com.omnistack.backend.application.port.out.Pega3VerifyTicketPort;
 import com.omnistack.backend.application.service.ProviderConfigService;
 import com.omnistack.backend.application.service.WsExtLogService;
+import com.omnistack.backend.config.ProviderCircuitBreaker;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ProviderCallLog;
@@ -82,6 +83,7 @@ public class Pega3WebClientAdapter implements
     private final ObjectMapper objectMapper;
     private final ProviderTokenResolverUseCase providerTokenResolverUseCase;
     private final WsExtLogService wsExtLogService;
+    private final ProviderCircuitBreaker providerCircuitBreaker;
 
     @Override
     public ExternalTransactionResponse queryProduct(Pega3ProductQueryCommand command, String operationPath) {
@@ -303,32 +305,33 @@ public class Pega3WebClientAdapter implements
 
         T response;
         try {
-            response = omnistackWebClient.post()
-                    .uri(url)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(request)
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
-                            .defaultIfEmpty("")
-                            .flatMap(body -> {
-                                traceErrorToConsole("Pega3 " + logOperation + " error", url, body);
-                                String errMsg = "Error HTTP al invocar " + errorOperation + ": " + body;
-                                wsExtLogService.log(ProviderCallLog.builder()
-                                        .uuid(uuid)
-                                        .providerKey(PROVIDER_KEY)
-                                        .wsKey(wsKey)
-                                        .url(url)
-                                        .requestJson(requestJson)
-                                        .responseJson(body)
-                                        .durationMs(System.currentTimeMillis() - startMs)
-                                        .isError(true)
-                                        .errorMessage(errMsg)
-                                        .build());
-                                return Mono.error(new IntegrationException(errMsg));
-                            }))
-                    .bodyToMono(String.class)
-                    .map(body -> parseResponse(body, responseType, errorOperation))
-                    .block();
+            response = providerCircuitBreaker.execute(PROVIDER_KEY, () ->
+                    omnistackWebClient.post()
+                            .uri(url)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(request)
+                            .retrieve()
+                            .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .defaultIfEmpty("")
+                                    .flatMap(body -> {
+                                        traceErrorToConsole("Pega3 " + logOperation + " error", url, body);
+                                        String errMsg = "Error HTTP al invocar " + errorOperation + ": " + body;
+                                        wsExtLogService.log(ProviderCallLog.builder()
+                                                .uuid(uuid)
+                                                .providerKey(PROVIDER_KEY)
+                                                .wsKey(wsKey)
+                                                .url(url)
+                                                .requestJson(requestJson)
+                                                .responseJson(body)
+                                                .durationMs(System.currentTimeMillis() - startMs)
+                                                .isError(true)
+                                                .errorMessage(errMsg)
+                                                .build());
+                                        return Mono.error(new IntegrationException(errMsg));
+                                    }))
+                            .bodyToMono(String.class)
+                            .map(body -> parseResponse(body, responseType, errorOperation))
+                            .block());
         } catch (WebClientRequestException exception) {
             traceErrorToConsole("Pega3 " + logOperation + " transport error", url, rootCauseMessage(exception));
             String errMsg = buildTransportErrorMessage(url, exception, errorOperation);

@@ -2,9 +2,10 @@ package com.omnistack.backend.infrastructure.adapter.oracle;
 
 import com.omnistack.backend.application.port.out.RegistroTrxPort;
 import com.omnistack.backend.domain.model.RegistroTrx;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -13,22 +14,32 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "app.datasource.hprod.url")
 public class OracleRegistroTrxAdapter implements RegistroTrxPort {
 
-    private static final String INSERT_SQL =
-            "INSERT INTO IN_OMNI_REGISTRO_TRX "
-            + "(UUID, CADENA, FARMACIA, NOMBRE_FARMACIA, POS, CANAL, "
-            + " PROVEEDOR, CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE, "
-            + " CAPABILITY, AUTHORIZATION, MONTO, MONEDA, COD_ESTADO, ES_ERROR) "
-            + "VALUES "
-            + "(:uuid, :cadena, :farmacia, :nombreFarmacia, :pos, :canal, "
-            + " :proveedor, :categoryCode, :subcategoryCode, :serviceProviderCode, :rmsItemCode, "
-            + " :capability, :authorization, :monto, :moneda, :codEstado, 'N')";
-
-    @Qualifier("omniOracleJdbcTemplate")
     private final NamedParameterJdbcTemplate jdbcTemplate;
+
+    public OracleRegistroTrxAdapter(
+            @Qualifier("omniOracleJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Value("${app.datasource.hprod.schema:TUKUNAFUNC}")
+    private String schema;
+
+    private String insertSql;
+
+    @PostConstruct
+    void init() {
+        insertSql = "INSERT INTO " + schema + ".IN_OMNI_REGISTRO_TRX "
+                + "(UUID, CADENA, FARMACIA, NOMBRE_FARMACIA, POS, CANAL, "
+                + " PROVEEDOR, CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE, "
+                + " CAPABILITY, AUTHORIZATION, MONTO, MONEDA, COD_ESTADO, ES_ERROR) "
+                + "VALUES "
+                + "(:uuid, :cadena, :farmacia, :nombreFarmacia, :pos, :canal, "
+                + " :proveedor, :categoryCode, :subcategoryCode, :serviceProviderCode, :rmsItemCode, "
+                + " :capability, :authorization, :monto, :moneda, :codEstado, 'N')";
+    }
 
     @Override
     @Async("loggingExecutor")
@@ -51,9 +62,9 @@ public class OracleRegistroTrxAdapter implements RegistroTrxPort {
                     .addValue("monto", entry.getMonto())
                     .addValue("moneda", entry.getMoneda() != null ? entry.getMoneda() : "USD")
                     .addValue("codEstado", entry.getCodEstado());
-            jdbcTemplate.update(INSERT_SQL, params);
+            jdbcTemplate.update(insertSql, params);
         } catch (Exception ex) {
-            log.warn("Error al registrar REGISTRO_TRX uuid={}: {}", entry.getUuid(), ex.getMessage());
+            log.warn("Error al registrar REGISTRO_TRX uuid={}: {}", entry.getUuid(), ex.getMessage(), ex);
         }
     }
 

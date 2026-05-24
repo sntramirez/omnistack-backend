@@ -1,9 +1,10 @@
 package com.omnistack.backend.config;
 
 import com.omnistack.backend.config.properties.AppProperties;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.time.Clock;
 import javax.sql.DataSource;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -34,12 +35,18 @@ public class BusinessLinesOracleConfig {
     @Bean(name = "businessLinesOracleDataSource")
     public DataSource businessLinesOracleDataSource(AppProperties appProperties) {
         AppProperties.BusinessLines.Oracle.Datasource datasource = appProperties.getBusinessLines().getOracle().getDatasource1();
-        return DataSourceBuilder.create()
-                .url(datasource.getUrl())
-                .username(datasource.getUsername())
-                .password(datasource.getPassword())
-                .driverClassName(datasource.getDriverClassName())
-                .build();
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(datasource.getUrl());
+        config.setUsername(datasource.getUsername());
+        config.setPassword(datasource.getPassword());
+        config.setDriverClassName(datasource.getDriverClassName());
+        config.setPoolName("omni-catalog-pool");
+        config.setMaximumPoolSize(10);
+        config.setMinimumIdle(2);
+        config.setConnectionTimeout(10_000);
+        config.setIdleTimeout(600_000);
+        config.setMaxLifetime(1_800_000);
+        return new HikariDataSource(config);
     }
 
     /**
