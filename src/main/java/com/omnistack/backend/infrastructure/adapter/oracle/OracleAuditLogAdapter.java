@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Primary
 @Component
-@ConditionalOnProperty(name = "app.datasource.hprod.url")
+@ConditionalOnProperty(name = "app.datasource.mom.url")
 public class OracleAuditLogAdapter implements AuditLogPort {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
@@ -28,7 +28,7 @@ public class OracleAuditLogAdapter implements AuditLogPort {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Value("${app.datasource.hprod.schema:TUKUNAFUNC}")
+    @Value("${app.datasource.mom.schema:GPF_OMNISTACK}")
     private String schema;
 
     private String insertSql;

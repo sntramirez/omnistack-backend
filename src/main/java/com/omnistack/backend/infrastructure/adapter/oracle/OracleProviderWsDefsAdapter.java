@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 /**
  * Implementacion Oracle de ProviderWsDefsPort.
  * Lee IN_OMNI_PROVEEDOR_WS_DEFS JOIN IN_OMNI_PROVEEDOR_WS del schema GPF_OMNISTACK.
- * Solo se activa cuando app.datasource.hprod.url esta configurado.
+ * Solo se activa cuando app.datasource.mom.url esta configurado.
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "app.datasource.hprod.url")
+@ConditionalOnProperty(name = "app.datasource.mom.url")
 public class OracleProviderWsDefsAdapter implements ProviderWsDefsPort {
 
     private static final String LOAD_ALL_SQL =

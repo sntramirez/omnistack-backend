@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "app.datasource.hprod.url")
+@ConditionalOnProperty(name = "app.datasource.mom.url")
 public class OracleWsExtLogAdapter implements WsExtLogPort {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
@@ -24,7 +24,7 @@ public class OracleWsExtLogAdapter implements WsExtLogPort {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Value("${app.datasource.hprod.schema:TUKUNAFUNC}")
+    @Value("${app.datasource.mom.schema:GPF_OMNISTACK}")
     private String schema;
 
     private String insertSql;

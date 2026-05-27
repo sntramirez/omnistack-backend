@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 /**
  * Implementacion Oracle de ProviderConfigPort.
  * Lee la tabla IN_OMNI_PROVEEDOR_CONFIG del schema GPF_OMNISTACK.
- * Solo se activa cuando app.datasource.hprod.url esta configurado.
+ * Solo se activa cuando app.datasource.mom.url esta configurado.
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "app.datasource.hprod.url")
+@ConditionalOnProperty(name = "app.datasource.mom.url")
 public class OracleProviderConfigAdapter implements ProviderConfigPort {
 
     private static final String LOAD_ALL_SQL =

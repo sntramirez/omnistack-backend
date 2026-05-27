@@ -11,18 +11,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
- * Configuracion del datasource HPROD (schema weblink, PRS6.UIO).
- * Solo se activa cuando app.datasource.hprod.url esta definido.
+ * Configuracion del datasource MOM (schema GPF_OMNISTACK, PRS6.UIO).
+ * Solo se activa cuando app.datasource.mom.url esta definido.
  * Expone los beans omniOracleDataSource y omniOracleJdbcTemplate
  * para su uso en repositorios de logs y registro de transacciones.
  */
 @Configuration
-@ConditionalOnProperty(name = "app.datasource.hprod.url")
+@ConditionalOnProperty(name = "app.datasource.mom.url")
 public class OmniOracleConfig {
 
     @Bean(name = "omniOracleDataSource")
     public DataSource omniOracleDataSource(AppProperties appProperties) {
-        AppProperties.Datasource.HprodDatasource ds = appProperties.getDatasource().getHprod();
+        AppProperties.Datasource.OracleDatasource ds = appProperties.getDatasource().getMom();
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(ds.getUrl());
         config.setUsername(ds.getUsername());

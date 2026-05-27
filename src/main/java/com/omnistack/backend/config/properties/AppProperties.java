@@ -56,7 +56,6 @@ public class AppProperties {
         private int consentTextMaxLineLength = 56;
         private Cache cache = new Cache();
         private DefaultRequest defaultRequest = new DefaultRequest();
-        private Oracle oracle = new Oracle();
 
         /**
          * Propiedades de cache de lineas de negocio.
@@ -77,25 +76,6 @@ public class AppProperties {
             private String pos;
             private String channelPos;
         }
-
-        /**
-         * Propiedades Oracle para catalogo comercial.
-         */
-        @Data
-        public static class Oracle {
-            private Datasource datasource1 = new Datasource();
-
-            /**
-             * Propiedades de datasource Oracle.
-             */
-            @Data
-            public static class Datasource {
-                private String url;
-                private String username;
-                private String password;
-                private String driverClassName;
-            }
-        }
     }
 
     /**
@@ -109,19 +89,20 @@ public class AppProperties {
     }
 
     /**
-     * Datasources adicionales (HPROD weblink schema).
+     * Datasources Oracle de la aplicacion.
      */
     @Data
     public static class Datasource {
-        private HprodDatasource hprod = new HprodDatasource();
+        private OracleDatasource prod = new OracleDatasource();
+        private OracleDatasource mom = new OracleDatasource();
 
         @Data
-        public static class HprodDatasource {
+        public static class OracleDatasource {
             private String url;
             private String username;
             private String password;
             private String driverClassName;
-            private String schema = "GPF_OMNISTACK";
+            private String schema;
         }
     }
 
