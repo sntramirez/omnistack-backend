@@ -191,12 +191,12 @@ END;
 /
 
 -- ============================================================
--- AD_COM_FORMPAG_SERVICIO
+-- AD_COM_FORMPAG_SERVICIO_TMP
 -- Alimenta: sql/business-lines/oracle/payment-methods.sql
 -- ============================================================
 CREATE SEQUENCE SEQ_AD_COM_FORMPAG START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
 
-CREATE TABLE AD_COM_FORMPAG_SERVICIO (
+CREATE TABLE AD_COM_FORMPAG_SERVICIO_TMP (
   ID                      NUMBER        NOT NULL,
   CHAIN                   VARCHAR2(10),
   STORE                   VARCHAR2(10),
@@ -215,7 +215,7 @@ CREATE TABLE AD_COM_FORMPAG_SERVICIO (
 );
 
 CREATE OR REPLACE TRIGGER TRG_AD_COM_FORMPAG_BI
-  BEFORE INSERT ON AD_COM_FORMPAG_SERVICIO
+  BEFORE INSERT ON AD_COM_FORMPAG_SERVICIO_TMP
   FOR EACH ROW
   WHEN (NEW.ID IS NULL)
 BEGIN
