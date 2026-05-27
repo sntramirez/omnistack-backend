@@ -86,6 +86,7 @@ public class AppProperties {
         private int defaultConnectTimeoutMs = 60000;
         private int defaultReadTimeoutMs = 60000;
         private boolean mockEnabled;
+        private boolean sslVerificationDisabled = false;
     }
 
     /**
