@@ -155,12 +155,12 @@ END;
 /
 
 -- ============================================================
--- AD_ITEM_SERVICIO
+-- AD_ITEM_SERVICIO_TMP
 -- Alimenta: sql/business-lines/oracle/input-fields.sql
 -- ============================================================
 CREATE SEQUENCE SEQ_AD_ITEM_SERV START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
 
-CREATE TABLE AD_ITEM_SERVICIO (
+CREATE TABLE AD_ITEM_SERVICIO_TMP (
   ID                   NUMBER        NOT NULL,
   CHAIN                VARCHAR2(10),
   STORE                VARCHAR2(10),
@@ -182,7 +182,7 @@ CREATE TABLE AD_ITEM_SERVICIO (
 );
 
 CREATE OR REPLACE TRIGGER TRG_AD_ITEM_SERV_BI
-  BEFORE INSERT ON AD_ITEM_SERVICIO
+  BEFORE INSERT ON AD_ITEM_SERVICIO_TMP
   FOR EACH ROW
   WHEN (NEW.ID IS NULL)
 BEGIN
