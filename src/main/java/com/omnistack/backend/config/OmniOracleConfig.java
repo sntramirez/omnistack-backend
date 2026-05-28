@@ -11,10 +11,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
- * Configuracion del datasource MOM (schema GPF_OMNISTACK, PRS6.UIO).
- * Solo se activa cuando app.datasource.mom.url esta definido.
- * Expone los beans omniOracleDataSource y omniOracleJdbcTemplate
- * para su uso en repositorios de logs y registro de transacciones.
+ * Datasource Oracle GPF_OMNISTACK — logs y config de proveedores (IN_OMNI_*).
+ * Se activa cuando app.datasource.mom.url esta definido.
  */
 @Configuration
 @ConditionalOnProperty(name = "app.datasource.mom.url")

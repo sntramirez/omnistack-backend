@@ -54,6 +54,7 @@ public class AppProperties {
     public static class BusinessLines {
         private String source = "oracle";
         private int consentTextMaxLineLength = 56;
+        private Map<String, Integer> canalCodigos = new HashMap<>(Map.of("POS", 1));
         private Cache cache = new Cache();
         private DefaultRequest defaultRequest = new DefaultRequest();
 

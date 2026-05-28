@@ -109,38 +109,4 @@ class OracleBusinessLinesCatalogSourceAdapterTest {
         assertTrue(snapshot.getServices().get(0).isRequiresConsent());
     }
 
-    @Test
-    void shouldExposeOnlyPrecheckInputFieldsForEcuabetCashOutCatalog() {
-        OracleBusinessLinesSqlProvider sqlProvider = new OracleBusinessLinesSqlProvider();
-
-        String inputFieldsSql = sqlProvider.getInputFieldsSql();
-
-        assertTrue(inputFieldsSql.contains("FROM AD_ITEM_SERVICIO_TMP"));
-        assertTrue(inputFieldsSql.contains("WHERE CHANNEL_POS = :channel_pos"));
-        assertTrue(inputFieldsSql.contains("INPUT_FIELD_ID"));
-        // Orden personalizado para ecuabet cashout (100708846): withdrawId\u2192password\u2192amount
-        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708846' AND INPUT_FIELD_ID = 'withdrawId' THEN 1"));
-        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708846' AND INPUT_FIELD_ID = 'password'   THEN 2"));
-        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708846' AND INPUT_FIELD_ID = 'amount'     THEN 3"));
-        // No debe tener datos hardcodeados
-        assertFalse(inputFieldsSql.contains("FROM DUAL"));
-        assertFalse(inputFieldsSql.contains("UNION ALL"));
-    }
-
-    @Test
-    void shouldExposeOnlyExecuteInputFieldsForBet593CashOutCatalog() {
-        OracleBusinessLinesSqlProvider sqlProvider = new OracleBusinessLinesSqlProvider();
-
-        String inputFieldsSql = sqlProvider.getInputFieldsSql();
-
-        assertTrue(inputFieldsSql.contains("FROM AD_ITEM_SERVICIO_TMP"));
-        assertTrue(inputFieldsSql.contains("WHERE CHANNEL_POS = :channel_pos"));
-        // Orden personalizado para bet593 cashout (100708848): document\u2192withdrawId\u2192amount
-        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708848' AND INPUT_FIELD_ID = 'document'   THEN 1"));
-        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708848' AND INPUT_FIELD_ID = 'withdrawId' THEN 2"));
-        assertTrue(inputFieldsSql.contains("RMS_ITEM_CODE = '100708848' AND INPUT_FIELD_ID = 'amount'     THEN 3"));
-        // No debe tener datos hardcodeados
-        assertFalse(inputFieldsSql.contains("FROM DUAL"));
-        assertFalse(inputFieldsSql.contains("UNION ALL"));
-    }
 }

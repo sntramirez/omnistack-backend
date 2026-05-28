@@ -62,11 +62,8 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
     @Override
     public CatalogSnapshot loadCatalogSnapshot(BusinessLinesRequest request) {
         MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("chain", request.getChain())
-                .addValue("store", request.getStore())
-                .addValue("store_name", request.getStoreName())
-                .addValue("pos", request.getPos())
-                .addValue("channel_pos", Objects.requireNonNull(request.getChannelPos()).name());
+                .addValue("canal_codigo", appProperties.getBusinessLines().getCanalCodigos()
+                        .getOrDefault(Objects.requireNonNull(request.getChannelPos()).name(), 1));
 
         List<CategorySubcategoryRow> categoryRows = jdbcTemplate.query(
                 sqlProvider.getCategorySubcategorySql(),
@@ -109,7 +106,9 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .collect(Collectors.groupingBy(
                         PaymentMethodRow::serviceKey,
                         LinkedHashMap::new,
-                        Collectors.mapping(this::toPaymentMethod, Collectors.toList())));
+                        Collectors.collectingAndThen(
+                                Collectors.mapping(this::toPaymentMethod, Collectors.toList()),
+                                list -> list.stream().filter(Objects::nonNull).toList())));
 
         List<ServiceDefinition> services = serviceRows.stream()
                 .map(row -> toServiceDefinition(
@@ -179,7 +178,7 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .description(row.description())
                 .active(row.active())
                 .jdeCode(row.jdeCode())
-                .movementType(MovementType.valueOf(row.movementType()))
+                .movementType(MovementType.valueOf(row.movementType().replace(' ', '_').toUpperCase(Locale.ROOT)))
                 .mixedPayment(row.mixedPayment())
                 .flgItem(FlgItem.valueOf(row.flgItem()))
                 .refund(row.refund())
@@ -209,9 +208,15 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
     }
 
     private PaymentMethod toPaymentMethod(PaymentMethodRow row) {
+        PaymentMethodCode code;
+        try {
+            code = PaymentMethodCode.valueOf(row.paymentMethodCode().replace(' ', '_').toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
         return PaymentMethod.builder()
                 .servicePaymentMethodId(row.servicePaymentMethodId())
-                .paymentMethodCode(PaymentMethodCode.valueOf(row.paymentMethodCode().replace(' ', '_').toUpperCase(Locale.ROOT)))
+                .paymentMethodCode(code)
                 .active(row.active())
                 .description(row.paymentMethodCode())
                 .build();

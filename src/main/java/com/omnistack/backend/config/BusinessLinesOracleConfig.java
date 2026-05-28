@@ -12,6 +12,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
+/**
+ * Datasource Oracle TUKUNAFUNC — catalogo compartido (AD_*).
+ * Se activa cuando app.datasource.prod.url esta definido.
+ */
 @Configuration
 @ConditionalOnProperty(name = "app.datasource.prod.url")
 public class BusinessLinesOracleConfig {
