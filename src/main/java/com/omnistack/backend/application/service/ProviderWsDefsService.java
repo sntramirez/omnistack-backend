@@ -69,6 +69,14 @@ public class ProviderWsDefsService {
     }
 
     /**
+     * Indica si existe una entrada item.{rmsItemCode} en WS_DEFS para la operacion dada.
+     * Soporta el formato multi-item: DEFAULT_CLAVE = "item.{rmsItemCode}".
+     */
+    public boolean hasItem(String providerKey, String wsKey, String rmsItemCode) {
+        return cache.containsKey(cacheKey(providerKey, wsKey, "item." + rmsItemCode));
+    }
+
+    /**
      * Extrae todos los offer_id.{rmsItemCode} como Map&lt;rmsItemCode, offerId&gt;.
      * Las claves en WS_DEFS tienen formato "offer_id.{rmsItemCode}".
      */

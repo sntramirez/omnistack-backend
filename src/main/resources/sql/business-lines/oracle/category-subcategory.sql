@@ -16,4 +16,4 @@ JOIN CLASS c
 JOIN SUBCLASS sc
     ON sc.CLASS       = im.CLASS
    AND sc.SUBCLASS_ID = im.SUBCLASS
-ORDER BY TO_NUMBER(category_code), TO_NUMBER(subcategory_code)
+ORDER BY c.CLASS, sc.SUBCLASS_ID

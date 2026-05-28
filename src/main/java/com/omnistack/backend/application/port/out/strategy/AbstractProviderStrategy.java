@@ -36,7 +36,9 @@ public abstract class AbstractProviderStrategy implements TransactionFlowStrateg
 
     /**
      * Indica si existe item en WS_DEFS que coincida con rms_item_code y URL en DB para la operacion.
-     * Usa IN_OMNI_PROVEEDOR_WS_DEFS (campo "item") en lugar de AppProperties.services.
+     * Soporta dos formatos en WS_DEFS:
+     *   - Multi-item (nuevo): DEFAULT_CLAVE = "item.{rmsItemCode}" — permite N items por WS_KEY.
+     *   - Single-item (legacy): DEFAULT_CLAVE = "item", DEFAULT_VALOR_TEXT = rmsItemCode.
      */
     protected boolean hasConfiguredOperation(
             ProviderWsService wsService,
@@ -45,14 +47,15 @@ public abstract class AbstractProviderStrategy implements TransactionFlowStrateg
             Capability capability,
             ServiceDefinition serviceDefinition) {
         String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
-        String configuredItem = defsService.getString(providerKey, wsKey, "item");
-        return configuredItem != null
-                && configuredItem.equalsIgnoreCase(serviceDefinition.getRmsItemCode())
-                && wsService.hasUrl(providerKey, wsKey);
+        String rmsItemCode = serviceDefinition.getRmsItemCode();
+        boolean hasItem = defsService.hasItem(providerKey, wsKey, rmsItemCode)
+                || rmsItemCode.equalsIgnoreCase(defsService.getString(providerKey, wsKey, "item"));
+        return hasItem && wsService.hasUrl(providerKey, wsKey);
     }
 
     /**
      * Valida item en WS_DEFS y retorna la URL completa desde DB para la operacion.
+     * Soporta los mismos dos formatos que hasConfiguredOperation.
      */
     protected String getRequiredOperationUrl(
             ProviderWsService wsService,
@@ -62,11 +65,12 @@ public abstract class AbstractProviderStrategy implements TransactionFlowStrateg
             ServiceDefinition serviceDefinition,
             String providerName) {
         String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
-        String configuredItem = defsService.getString(providerKey, wsKey, "item");
-        if (configuredItem == null
-                || !configuredItem.equalsIgnoreCase(serviceDefinition.getRmsItemCode())) {
+        String rmsItemCode = serviceDefinition.getRmsItemCode();
+        boolean hasItem = defsService.hasItem(providerKey, wsKey, rmsItemCode)
+                || rmsItemCode.equalsIgnoreCase(defsService.getString(providerKey, wsKey, "item"));
+        if (!hasItem) {
             throw new IntegrationException(providerName + " no tiene item configurado para rms_item_code="
-                    + serviceDefinition.getRmsItemCode() + ", capability=" + capability.name()
+                    + rmsItemCode + ", capability=" + capability.name()
                     + " y movement_type=" + serviceDefinition.getMovementType());
         }
         return wsService.requireUrl(providerKey, wsKey, providerName);

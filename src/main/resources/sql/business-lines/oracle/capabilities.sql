@@ -27,7 +27,4 @@ JOIN IN_OMNI_PROVEEDOR_WS ws
     AND ws.ENABLED      = 'S'
 WHERE REGEXP_SUBSTR(ws.WS_KEY, '^[^.]+')
       IN ('PRECHECK', 'CREATE_TICKET', 'EXECUTE', 'VERIFY', 'REVERSE')
-ORDER BY TO_NUMBER(category_code),
-         TO_NUMBER(subcategory_code),
-         TO_NUMBER(service_provider_code),
-         rms_item_code
+ORDER BY c.CLASS, sc.SUBCLASS_ID, sp.TERCERO, sp.CODIGO_ITEM_RMS
