@@ -11,15 +11,15 @@ JOIN AD_CANAL_SERVICIO cs
    AND cs.CODIGO_CANAL = :canal_codigo
    AND cs.ACTIVO       = 'S'
 JOIN ITEM_MASTER im
-    ON im.ITEM = TO_NUMBER(sp.CODIGO_ITEM_RMS)
+    ON TRIM(im.ITEM) = TRIM(sp.CODIGO_ITEM_RMS)
 JOIN CLASS c
     ON c.CLASS = im.CLASS
 JOIN SUBCLASS sc
     ON sc.CLASS       = im.CLASS
    AND sc.SUBCLASS_ID = im.SUBCLASS
 JOIN rms.ITEM_SUPPLIER isup
-    ON isup.ITEM     = TO_NUMBER(sp.CODIGO_ITEM_RMS)
-   AND isup.SUPPLIER = sp.TERCERO
+    ON TRIM(isup.ITEM) = TRIM(sp.CODIGO_ITEM_RMS)
+   AND isup.SUPPLIER   = sp.TERCERO
 JOIN rms.SUPS s
     ON s.SUPPLIER = sp.TERCERO
-ORDER BY TO_NUMBER(category_code), TO_NUMBER(subcategory_code), TO_NUMBER(service_provider_code)
+ORDER BY c.CLASS, sc.SUBCLASS_ID, sp.TERCERO

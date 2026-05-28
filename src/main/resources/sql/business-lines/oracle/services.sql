@@ -23,15 +23,15 @@ JOIN AD_CANAL_SERVICIO cs
    AND cs.CODIGO_CANAL = :canal_codigo
    AND cs.ACTIVO       = 'S'
 JOIN ITEM_MASTER im
-    ON im.ITEM = TO_NUMBER(sp.CODIGO_ITEM_RMS)
+    ON TRIM(im.ITEM) = TRIM(sp.CODIGO_ITEM_RMS)
 JOIN CLASS c
     ON c.CLASS = im.CLASS
 JOIN SUBCLASS sc
     ON sc.CLASS       = im.CLASS
    AND sc.SUBCLASS_ID = im.SUBCLASS
 JOIN rms.UDA_ITEM_LOV uil
-    ON uil.ITEM   = TO_NUMBER(sp.CODIGO_ITEM_RMS)
-   AND uil.UDA_ID = 3330
+    ON TRIM(uil.ITEM) = TRIM(sp.CODIGO_ITEM_RMS)
+   AND uil.UDA_ID     = 3330
 JOIN rms.UDA_VALUES uv
     ON uv.UDA_ID    = uil.UDA_ID
    AND uv.UDA_VALUE = uil.UDA_VALUE
