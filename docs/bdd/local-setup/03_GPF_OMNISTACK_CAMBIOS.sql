@@ -19,8 +19,6 @@ CREATE TABLE AD_SERVICIO_PARAMETROS (
     ID_CONFIG                NUMBER          NOT NULL,
     CODIGO_ITEM_RMS          VARCHAR2(25)    NOT NULL,
     TERCERO                  NUMBER          NOT NULL,
-    NOMBRE_PROVEEDOR         VARCHAR2(200),
-    RUC_PROVEEDOR            VARCHAR2(20),
     FLG_PAGO_MIXTO           CHAR(1)         DEFAULT 'N' NOT NULL,
     FLG_ITEM                 VARCHAR2(10)    NOT NULL,
     FLG_DEVOLUCION           CHAR(1)         DEFAULT 'N' NOT NULL,

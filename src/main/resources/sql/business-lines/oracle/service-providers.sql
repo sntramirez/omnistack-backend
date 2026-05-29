@@ -2,8 +2,8 @@ SELECT DISTINCT
     TO_CHAR(c.CLASS)        AS category_code,
     TO_CHAR(sc.SUBCLASS_ID) AS subcategory_code,
     TO_CHAR(sp.TERCERO)     AS service_provider_code,
-    sp.RUC_PROVEEDOR        AS ruc_provider,
-    sp.NOMBRE_PROVEEDOR     AS provider_name,
+    s.SUP_NAME_SECONDARY    AS ruc_provider,
+    s.SUP_NAME              AS provider_name,
     1                       AS is_active
 FROM AD_SERVICIO_PARAMETROS sp
 JOIN AD_CANAL_SERVICIO cs
@@ -17,4 +17,9 @@ JOIN CLASS c
 JOIN SUBCLASS sc
     ON sc.CLASS       = im.CLASS
    AND sc.SUBCLASS_ID = im.SUBCLASS
+JOIN rms.ITEM_SUPPLIER isup
+    ON TRIM(isup.ITEM) = TRIM(sp.CODIGO_ITEM_RMS)
+   AND isup.SUPPLIER   = sp.TERCERO
+JOIN rms.SUPS s
+    ON s.SUPPLIER = sp.TERCERO
 ORDER BY c.CLASS, sc.SUBCLASS_ID, sp.TERCERO
