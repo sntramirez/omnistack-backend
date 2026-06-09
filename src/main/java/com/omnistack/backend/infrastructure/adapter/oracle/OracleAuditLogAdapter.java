@@ -36,11 +36,11 @@ public class OracleAuditLogAdapter implements AuditLogPort {
     @PostConstruct
     void init() {
         insertSql = "INSERT INTO " + schema + ".IN_OMNI_LOGS_APP "
-                + "(UUID, REQUEST, RESPONSE, USUARIO, PROVEEDOR, CAPABILITY, CANAL, "
+                + "(CODIGO, UUID, REQUEST, RESPONSE, USUARIO, PROVEEDOR, CAPABILITY, CANAL, "
                 + " CADENA, FARMACIA, NOMBRE_FARMACIA, POS, URL, METODO, "
                 + " HTTP_STATUS, ES_ERROR, COD_ERROR, MSG_ERROR) "
                 + "VALUES "
-                + "(:uuid, :request, :response, :usuario, :proveedor, :capability, :canal, "
+                + "(SEQ_IN_OMNI_LOGS_APP.NEXTVAL, :uuid, :request, :response, :usuario, :proveedor, :capability, :canal, "
                 + " :cadena, :farmacia, :nombreFarmacia, :pos, :url, :metodo, "
                 + " :httpStatus, :esError, :codError, :msgError)";
         log.info("OracleAuditLogAdapter init — schema={}", schema);

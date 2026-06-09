@@ -32,9 +32,9 @@ public class OracleWsExtLogAdapter implements WsExtLogPort {
     @PostConstruct
     void init() {
         insertSql = "INSERT INTO " + schema + ".IN_OMNI_LOGS_WS_EXT "
-                + "(UUID, PROVEEDOR, WS_KEY, URL, REQUEST, RESPONSE, DURACION_MS, HTTP_STATUS, ES_ERROR, CP_VAR1) "
+                + "(CODIGO, UUID, PROVEEDOR, WS_KEY, URL, REQUEST, RESPONSE, DURACION_MS, HTTP_STATUS, ES_ERROR, CP_VAR1) "
                 + "VALUES "
-                + "(:uuid, :proveedor, :wsKey, :url, :request, :response, :duracionMs, :httpStatus, :esError, :cpVar1)";
+                + "(SEQ_IN_OMNI_LOGS_WS_EXT.NEXTVAL, :uuid, :proveedor, :wsKey, :url, :request, :response, :duracionMs, :httpStatus, :esError, :cpVar1)";
         log.info("OracleWsExtLogAdapter init — schema={}", schema);
         try {
             Integer cnt = jdbcTemplate.queryForObject(

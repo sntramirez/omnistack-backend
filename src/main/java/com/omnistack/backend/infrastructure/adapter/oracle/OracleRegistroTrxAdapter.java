@@ -32,11 +32,11 @@ public class OracleRegistroTrxAdapter implements RegistroTrxPort {
     @PostConstruct
     void init() {
         insertSql = "INSERT INTO " + schema + ".IN_OMNI_REGISTRO_TRX "
-                + "(UUID, CADENA, FARMACIA, NOMBRE_FARMACIA, POS, CANAL, "
+                + "(CODIGO, UUID, CADENA, FARMACIA, NOMBRE_FARMACIA, POS, CANAL, "
                 + " PROVEEDOR, CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE, "
                 + " CAPABILITY, AUTHORIZATION, MONTO, MONEDA, COD_ESTADO, ES_ERROR) "
                 + "VALUES "
-                + "(:uuid, :cadena, :farmacia, :nombreFarmacia, :pos, :canal, "
+                + "(SEQ_IN_OMNI_REGISTRO_TRX.NEXTVAL, :uuid, :cadena, :farmacia, :nombreFarmacia, :pos, :canal, "
                 + " :proveedor, :categoryCode, :subcategoryCode, :serviceProviderCode, :rmsItemCode, "
                 + " :capability, :authorization, :monto, :moneda, :codEstado, 'N')";
     }

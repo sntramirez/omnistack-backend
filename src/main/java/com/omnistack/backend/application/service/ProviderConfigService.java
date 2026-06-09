@@ -55,6 +55,8 @@ public class ProviderConfigService {
         p.setToken(getString(providerKey, "token"));
         p.setShopId(getString(providerKey, "shop_id"));
         p.setShopIp(getString(providerKey, "shop_ip"));
+        Integer country = getInteger(providerKey, "country");
+        if (country != null) p.setCountry(country);
         p.setCanal(getString(providerKey, "canal"));
         p.setLatitude(getString(providerKey, "latitude"));
         p.setLongitude(getString(providerKey, "longitude"));
