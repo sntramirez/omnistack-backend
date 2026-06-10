@@ -12,8 +12,8 @@ SELECT
     sp.NUM_TICKETS          AS num_tickets,
     CASE WHEN sp.REQUIERE_CONSENTIMIENTO = 'S' THEN 1 ELSE 0 END AS requires_consent,
     sp.TEXTO_CONSENTIMIENTO AS consent_text
-FROM AD_SERVICIO_PARAMETROS sp
-JOIN AD_CANAL_SERVICIO cs
+FROM gpf_omnistack.AD_SERVICIO_PARAMETROS sp
+JOIN gpf_omnistack.AD_CANAL_SERVICIO cs
     ON cs.ID_CONFIG    = sp.ID_CONFIG
    AND cs.CODIGO_CANAL = :canal_codigo
    AND cs.ACTIVO       = 'S'

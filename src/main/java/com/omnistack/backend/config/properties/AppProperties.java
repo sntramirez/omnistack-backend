@@ -96,7 +96,6 @@ public class AppProperties {
     @Data
     public static class Datasource {
         private OracleDatasource prod = new OracleDatasource();
-        private OracleDatasource mom = new OracleDatasource();
         private OracleDatasource rms = new OracleDatasource();
 
         @Data

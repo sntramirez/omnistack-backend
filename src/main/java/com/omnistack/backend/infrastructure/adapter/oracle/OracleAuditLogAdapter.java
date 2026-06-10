@@ -18,17 +18,17 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Primary
 @Component
-@ConditionalOnProperty(name = "app.datasource.mom.url")
+@ConditionalOnProperty(name = "app.datasource.prod.url")
 public class OracleAuditLogAdapter implements AuditLogPort {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public OracleAuditLogAdapter(
-            @Qualifier("omniOracleJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
+            @Qualifier("prodOracleJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Value("${app.datasource.mom.schema:GPF_OMNISTACK}")
+    @Value("${app.datasource.prod.schema:TUKUNAFUNC}")
     private String schema;
 
     private String insertSql;

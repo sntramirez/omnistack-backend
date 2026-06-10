@@ -39,20 +39,17 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "app.business-lines", name = "source", havingValue = "oracle", matchIfMissing = true)
 public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCatalogSourcePort, CatalogSourcePort {
 
-    private final NamedParameterJdbcTemplate adJdbcTemplate;
-    private final NamedParameterJdbcTemplate omniJdbcTemplate;
+    private final NamedParameterJdbcTemplate prodJdbcTemplate;
     private final NamedParameterJdbcTemplate rmsJdbcTemplate;
     private final OracleBusinessLinesSqlProvider sqlProvider;
     private final AppProperties appProperties;
 
     public OracleBusinessLinesCatalogSourceAdapter(
-            @Qualifier("businessLinesOracleNamedParameterJdbcTemplate") NamedParameterJdbcTemplate adJdbcTemplate,
-            @Qualifier("omniOracleJdbcTemplate") NamedParameterJdbcTemplate omniJdbcTemplate,
+            @Qualifier("prodOracleJdbcTemplate") NamedParameterJdbcTemplate prodJdbcTemplate,
             @Qualifier("rmsOracleJdbcTemplate") NamedParameterJdbcTemplate rmsJdbcTemplate,
             OracleBusinessLinesSqlProvider sqlProvider,
             AppProperties appProperties) {
-        this.adJdbcTemplate = adJdbcTemplate;
-        this.omniJdbcTemplate = omniJdbcTemplate;
+        this.prodJdbcTemplate = prodJdbcTemplate;
         this.rmsJdbcTemplate = rmsJdbcTemplate;
         this.sqlProvider = sqlProvider;
         this.appProperties = appProperties;
@@ -76,8 +73,8 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .addValue("canal_codigo", appProperties.getBusinessLines().getCanalCodigos()
                         .getOrDefault(Objects.requireNonNull(request.getChannelPos()).name(), 1));
 
-        // --- AD: parametros de servicio por item activo en el canal ---
-        List<AdServiceRow> adServices = adJdbcTemplate.query(
+        // --- AD: parametros de servicio por item activo en el canal (via gpf_omnistack.) ---
+        List<AdServiceRow> adServices = rmsJdbcTemplate.query(
                 sqlProvider.getAdServicesSql(), adParams, adServiceRowMapper());
         if (adServices.isEmpty()) {
             return emptySnapshot();
@@ -95,16 +92,16 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
         List<RmsSupplierRow> rmsSuppliers = rmsJdbcTemplate.query(
                 sqlProvider.getRmsSuppliersSql(), rmsParams, rmsSupplierRowMapper());
 
-        // --- AD: formas de pago por item ---
-        List<AdPaymentMethodRow> adPaymentMethods = adJdbcTemplate.query(
+        // --- AD: formas de pago por item (via gpf_omnistack.) ---
+        List<AdPaymentMethodRow> adPaymentMethods = rmsJdbcTemplate.query(
                 sqlProvider.getAdPaymentMethodsSql(), adParams, adPaymentMethodRowMapper());
 
-        // --- OMNI: capabilities por service_provider_code (IN_OMNI_PROVEEDOR_WS) ---
-        List<OmniCapabilityRow> omniCapabilities = omniJdbcTemplate.query(
+        // --- PROD (TUKUNAFUNC): capabilities por service_provider_code (IN_OMNI_PROVEEDOR_WS) ---
+        List<OmniCapabilityRow> omniCapabilities = prodJdbcTemplate.query(
                 sqlProvider.getAdCapabilitiesSql(), new MapSqlParameterSource(), omniCapabilityRowMapper());
 
         // --- AD: campos de entrada (stub — retorna 0 filas) ---
-        List<InputFieldRow> inputFieldRows = adJdbcTemplate.query(
+        List<InputFieldRow> inputFieldRows = rmsJdbcTemplate.query(
                 sqlProvider.getInputFieldsSql(), adParams, inputFieldRowMapper());
 
         // --- Mapas de lookup ---

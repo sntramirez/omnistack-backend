@@ -14,17 +14,17 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "app.datasource.mom.url")
+@ConditionalOnProperty(name = "app.datasource.prod.url")
 public class OracleWsExtLogAdapter implements WsExtLogPort {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public OracleWsExtLogAdapter(
-            @Qualifier("omniOracleJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
+            @Qualifier("prodOracleJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Value("${app.datasource.mom.schema:GPF_OMNISTACK}")
+    @Value("${app.datasource.prod.schema:TUKUNAFUNC}")
     private String schema;
 
     private String insertSql;

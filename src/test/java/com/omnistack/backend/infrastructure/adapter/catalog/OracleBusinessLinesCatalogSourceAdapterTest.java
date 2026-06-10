@@ -21,14 +21,13 @@ class OracleBusinessLinesCatalogSourceAdapterTest {
 
     @Test
     void shouldAssembleCatalogSnapshotFromMultiSourceOracle() {
-        NamedParameterJdbcTemplate adTemplate = Mockito.mock(NamedParameterJdbcTemplate.class);
-        NamedParameterJdbcTemplate omniTemplate = Mockito.mock(NamedParameterJdbcTemplate.class);
+        NamedParameterJdbcTemplate prodTemplate = Mockito.mock(NamedParameterJdbcTemplate.class);
         NamedParameterJdbcTemplate rmsTemplate = Mockito.mock(NamedParameterJdbcTemplate.class);
         OracleBusinessLinesSqlProvider sqlProvider = Mockito.mock(OracleBusinessLinesSqlProvider.class);
         AppProperties appProperties = new AppProperties();
 
         OracleBusinessLinesCatalogSourceAdapter adapter = new OracleBusinessLinesCatalogSourceAdapter(
-                adTemplate, omniTemplate, rmsTemplate, sqlProvider, appProperties);
+                prodTemplate, rmsTemplate, sqlProvider, appProperties);
 
         BusinessLinesRequest request = BusinessLinesRequest.builder()
                 .chain("1")
@@ -45,8 +44,8 @@ class OracleBusinessLinesCatalogSourceAdapterTest {
         when(sqlProvider.getAdCapabilitiesSql()).thenReturn("omni-cap");
         when(sqlProvider.getInputFieldsSql()).thenReturn("input-fields");
 
-        // AD: parametros de servicio
-        when(adTemplate.query(eq("ad-services"), any(SqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of(
+        // AD: parametros de servicio (via gpf_omnistack. — rmsTemplate)
+        when(rmsTemplate.query(eq("ad-services"), any(SqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of(
                 new OracleBusinessLinesCatalogSourceAdapter.AdServiceRow(
                         "1", "100713841", true, false, "RECA", false,
                         "1", "200", "10000", "3", "3", true, "<html>consent</html>")));
@@ -61,18 +60,18 @@ class OracleBusinessLinesCatalogSourceAdapterTest {
                 new OracleBusinessLinesCatalogSourceAdapter.RmsSupplierRow(
                         "100713841", "1", "ECUABET", "9999999999001")));
 
-        // AD: formas de pago
-        when(adTemplate.query(eq("ad-pm"), any(SqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of(
+        // AD: formas de pago (via gpf_omnistack. — rmsTemplate)
+        when(rmsTemplate.query(eq("ad-pm"), any(SqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of(
                 new OracleBusinessLinesCatalogSourceAdapter.AdPaymentMethodRow(
                         "1", "100713841", 2, "TARJETA_CREDITO", true)));
 
-        // OMNI: capabilities por service_provider_code
-        when(omniTemplate.query(eq("omni-cap"), any(SqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of(
+        // PROD (TUKUNAFUNC): capabilities por service_provider_code
+        when(prodTemplate.query(eq("omni-cap"), any(SqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of(
                 new OracleBusinessLinesCatalogSourceAdapter.OmniCapabilityRow("1", "PRECHECK"),
                 new OracleBusinessLinesCatalogSourceAdapter.OmniCapabilityRow("1", "CREATE_TICKET")));
 
-        // AD: campos de entrada (stub vacio)
-        when(adTemplate.query(eq("input-fields"), any(SqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of());
+        // AD: campos de entrada (stub vacio — via rmsTemplate)
+        when(rmsTemplate.query(eq("input-fields"), any(SqlParameterSource.class), any(RowMapper.class))).thenReturn(List.of());
 
         var snapshot = adapter.loadCatalogSnapshot(request);
 
