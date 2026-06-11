@@ -9,7 +9,6 @@ import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
 import com.omnistack.backend.application.port.out.strategy.ReverseStrategy;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
 import com.omnistack.backend.domain.enums.Capability;
-import com.omnistack.backend.domain.enums.MovementType;
 import com.omnistack.backend.domain.model.ExternalTransactionRequest;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ServiceDefinition;
@@ -36,16 +35,10 @@ public class DefaultProviderTransactionStrategy
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
         String providerCode = serviceDefinition.getServiceProviderCode();
+        // Exclude providers with real strategies: 407925 (CONCECEL: ecuabet+bet593), 407827 (BROADNET: pega3+tradicional)
         return providerCode != null
-                && !"1".equalsIgnoreCase(providerCode)
-                && !isImplementedBet593Recharge(serviceDefinition, capability);
-    }
-
-    private boolean isImplementedBet593Recharge(ServiceDefinition serviceDefinition, Capability capability) {
-        return capability == Capability.PRECHECK
-                && serviceDefinition.getMovementType() == MovementType.CASH_IN
-                && "2".equalsIgnoreCase(serviceDefinition.getServiceProviderCode())
-                && "100708850".equalsIgnoreCase(serviceDefinition.getRmsItemCode());
+                && !"407925".equalsIgnoreCase(providerCode)
+                && !"407827".equalsIgnoreCase(providerCode);
     }
 
     @Override
