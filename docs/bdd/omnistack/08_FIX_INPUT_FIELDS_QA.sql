@@ -1,12 +1,12 @@
 -- ============================================================
--- Ejecutar como: TUKUNAFUNC (después de 06_DDL_INPUT_FIELDS.sql)
--- Inserta los campos de entrada para ECUABET y BET593 en QA.
--- Basado en el JSON de develop (puerto 8085, 2026-06-12).
---
--- Valores QA confirmados (2026-06-12):
---   ECUABET  category=983  subcategory=1118(CI) / 1119(CO)  svc=12661912
---   BET593   category=983  subcategory=1120(CI) / 1121(CO)  svc=408403
+-- Ejecutar como: TUKUNAFUNC
+-- Reemplaza los input_fields existentes con los valores correctos
+-- tomados del catálogo de develop (2026-06-12).
+-- Usar cuando ya se ejecutó 07_DML_INPUT_FIELDS_QA.sql con datos
+-- incorrectos (capabilities y labels distintos).
 -- ============================================================
+
+DELETE FROM TUKUNAFUNC.IN_OMNI_INPUT_FIELDS;
 
 -- -------------------------------------------------------
 -- ECUABET CASH_IN (1118 / 12661912 / 100713841)
@@ -124,8 +124,3 @@ VALUES (SEQ_IN_OMNI_INPUT_FIELDS.NEXTVAL,
     'withdrawId', 'Numero asignado a retiro', 'STRING', 'PRECHECK', 1, 'ID', NULL, 3);
 
 COMMIT;
-
--- Verificar:
--- SELECT SUBCATEGORY_CODE, RMS_ITEM_CODE, CAPABILITY, FIELD_ORDER, FIELD_ID, LABEL, IS_REQUIRED, FIELD_GROUP, CONDITIONAL_OPERATOR
---   FROM TUKUNAFUNC.IN_OMNI_INPUT_FIELDS
---  ORDER BY SUBCATEGORY_CODE, CAPABILITY, FIELD_ORDER;
