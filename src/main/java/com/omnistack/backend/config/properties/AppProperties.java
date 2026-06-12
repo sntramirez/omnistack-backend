@@ -20,7 +20,6 @@ public class AppProperties {
     private BusinessLines businessLines = new BusinessLines();
     private Integrations integrations = new Integrations();
     private Datasource datasource = new Datasource();
-    private Integration integration = new Integration();
 
     /**
      * Propiedades de metadata Swagger.
@@ -93,14 +92,6 @@ public class AppProperties {
     }
 
     /**
-     * Propiedades por proveedor externo (app.integration.providers.*).
-     */
-    @Data
-    public static class Integration {
-        private Map<String, ProviderProperties> providers = new HashMap<>();
-    }
-
-    /**
      * Datasources Oracle de la aplicacion.
      */
     @Data
@@ -123,7 +114,6 @@ public class AppProperties {
      */
     @Data
     public static class ProviderProperties {
-        private String baseUrl;
         private String technicalUser;
         private String providerName;
         private String categoryCode;
@@ -155,27 +145,6 @@ public class AppProperties {
         private String parish;
         private Map<String, String> offerIds = new HashMap<>();
         private ProviderTokenProperties auth = new ProviderTokenProperties();
-        private Map<String, ProviderCapabilityProperties> services = new HashMap<>();
-    }
-
-    /**
-     * Configuracion de operaciones por capability (cashin/cashout).
-     */
-    @Data
-    public static class ProviderCapabilityProperties {
-        private ProviderOperationProperties cashin = new ProviderOperationProperties();
-        private ProviderOperationProperties cashout = new ProviderOperationProperties();
-    }
-
-    /**
-     * Configuracion de una operacion externa concreta (item, path, capabilities).
-     */
-    @Data
-    public static class ProviderOperationProperties {
-        private String item;
-        private String path;
-        private String capabilities;
-        private String name;
     }
 
     /**
@@ -194,7 +163,6 @@ public class AppProperties {
      */
     @Data
     public static class ProviderLoginProperties {
-        private String path;
         private String username;
         private String password;
         private String productToSell;
