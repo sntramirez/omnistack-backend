@@ -141,6 +141,8 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .collect(Collectors.groupingBy(OmniCapabilityRow::serviceProviderCode,
                         LinkedHashMap::new,
                         Collectors.mapping(OmniCapabilityRow::capabilityCode, Collectors.toList())));
+        log.info("[BL-catalog][DIAG] capabilityCodesByProvider keys={}", capabilityCodesByProvider.keySet());
+        log.info("[BL-catalog][DIAG] activeItemCodes={}", activeItemCodes);
 
         // --- Construir CategorySubcategoryRow: CLASS/SUBCLASS distintos desde RMS ---
         List<CategorySubcategoryRow> categoryRows = rmsItems.stream()
@@ -199,8 +201,8 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .flatMap(service -> {
                     List<String> caps = capabilityCodesByProvider.getOrDefault(service.serviceProviderCode(), List.of());
                     if (caps.isEmpty()) {
-                        log.debug("[BL-catalog] serviceProviderCode={} rmsItemCode={} sin capabilities en IN_OMNI_PROVEEDOR_WS",
-                                service.serviceProviderCode(), service.rmsItemCode());
+                        log.info("[BL-catalog][DIAG] sin caps — serviceProviderCode='{}' (len={}) rmsItemCode='{}'",
+                                service.serviceProviderCode(), service.serviceProviderCode() == null ? -1 : service.serviceProviderCode().length(), service.rmsItemCode());
                     }
                     return caps.stream()
                             .map(cap -> new CapabilityRow(
@@ -208,7 +210,7 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                                     service.serviceProviderCode(), service.rmsItemCode(), cap));
                 })
                 .toList();
-        log.debug("[BL-catalog] capabilityRows={}", capabilityRows.size());
+        log.info("[BL-catalog][DIAG] capabilityRows={} serviceRows={}", capabilityRows.size(), serviceRows.size());
 
         // --- Construir PaymentMethodRow: formas de pago AD + categoria/subcategoria RMS ---
         List<PaymentMethodRow> paymentMethodRows = adPaymentMethods.stream()
