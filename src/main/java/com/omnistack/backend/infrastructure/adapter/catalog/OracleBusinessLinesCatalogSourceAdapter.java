@@ -211,6 +211,9 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 })
                 .toList();
         log.info("[BL-catalog][DIAG] capabilityRows={} serviceRows={}", capabilityRows.size(), serviceRows.size());
+        serviceRows.forEach(s -> log.info(
+                "[BL-catalog][DIAG] serviceRow: cat='{}' subcat='{}' spc='{}' item='{}' movType='{}'",
+                s.categoryCode(), s.subcategoryCode(), s.serviceProviderCode(), s.rmsItemCode(), s.movementType()));
 
         // --- Construir PaymentMethodRow: formas de pago AD + categoria/subcategoria RMS ---
         List<PaymentMethodRow> paymentMethodRows = adPaymentMethods.stream()
