@@ -12,10 +12,10 @@ JOIN CLASS c
 JOIN SUBCLASS sc
     ON sc.CLASS    = im.CLASS
    AND sc.SUBCLASS_ID = im.SUBCLASS
-JOIN UDA_ITEM_LOV uil
+JOIN rms.UDA_ITEM_LOV uil
     ON TRIM(uil.ITEM) = TRIM(im.ITEM)
    AND uil.UDA_ID     = 3330
-JOIN UDA_VALUES uv
+JOIN rms.UDA_VALUES uv
     ON uv.UDA_ID    = uil.UDA_ID
    AND uv.UDA_VALUE = uil.UDA_VALUE
 WHERE TRIM(im.ITEM) IN (:rms_item_codes)
