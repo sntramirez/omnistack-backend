@@ -119,6 +119,14 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
             log.warn("[BL-catalog] omniCapabilities vacío — los servicios quedarán sin capabilities y serán filtrados");
         }
 
+        // --- PROD (TUKUNAFUNC): movement_type por rms_item_code (IN_OMNI_PROVEEDOR_WS_DEFS) ---
+        List<MovementTypeRow> movementTypeRows = prodJdbcTemplate.query(
+                sqlProvider.getAdMovementTypesSql(), new MapSqlParameterSource(), movementTypeRowMapper());
+        log.debug("[BL-catalog] movementTypeRows={}", movementTypeRows.size());
+        Map<String, String> movementTypeByItem = movementTypeRows.stream()
+                .collect(Collectors.toMap(MovementTypeRow::rmsItemCode, MovementTypeRow::movementType,
+                        (a, b) -> a, LinkedHashMap::new));
+
         // --- AD: campos de entrada (stub — retorna 0 filas) ---
         List<InputFieldRow> inputFieldRows = rmsJdbcTemplate.query(
                 sqlProvider.getInputFieldsSql(), adParams, inputFieldRowMapper());
@@ -166,17 +174,18 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .values().stream().toList();
         log.debug("[BL-catalog] providerRows={}", providerRows.size());
 
-        // --- Construir ServiceRow: campos AD + metadata RMS ---
+        // --- Construir ServiceRow: campos AD + metadata RMS + movement_type de TUKUNAFUNC ---
         List<ServiceRow> serviceRows = adServices.stream()
                 .filter(r -> rmsItemMap.containsKey(r.rmsItemCode()))
                 .map(r -> {
                     RmsItemRow rms = rmsItemMap.get(r.rmsItemCode());
+                    String movementType = movementTypeByItem.getOrDefault(r.rmsItemCode(), "CASH_IN");
                     return new ServiceRow(
                             rms.categoryCode(), rms.subcategoryCode(),
                             r.serviceProviderCode(), r.rmsItemCode(),
                             rms.description(), r.active(),
                             null,
-                            rms.movementType(),
+                            movementType,
                             r.mixedPayment(), r.flgItem(), r.refund(),
                             r.minAmount(), r.maxAmount(),
                             r.timeoutWsMax(), r.retriesWsMax(), r.numTickets(),
@@ -384,6 +393,12 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 rs.getString("consent_text"));
     }
 
+    private RowMapper<MovementTypeRow> movementTypeRowMapper() {
+        return (rs, rowNum) -> new MovementTypeRow(
+                rs.getString("rms_item_code"),
+                rs.getString("movement_type"));
+    }
+
     private RowMapper<AdPaymentMethodRow> adPaymentMethodRowMapper() {
         return (rs, rowNum) -> new AdPaymentMethodRow(
                 rs.getString("service_provider_code"),
@@ -406,8 +421,7 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 rs.getString("category_name"),
                 rs.getString("subcategory_code"),
                 rs.getString("subcategory_name"),
-                rs.getString("description"),
-                rs.getString("movement_type"));
+                rs.getString("description"));
     }
 
     private RowMapper<RmsSupplierRow> rmsSupplierRowMapper() {
@@ -450,6 +464,8 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
             boolean requiresConsent,
             String consentText) {}
 
+    record MovementTypeRow(String rmsItemCode, String movementType) {}
+
     record AdPaymentMethodRow(
             String serviceProviderCode,
             String rmsItemCode,
@@ -465,8 +481,7 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
             String categoryName,
             String subcategoryCode,
             String subcategoryName,
-            String description,
-            String movementType) {}
+            String description) {}
 
     record RmsSupplierRow(
             String rmsItemCode,
