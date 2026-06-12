@@ -1,6 +1,7 @@
 package com.omnistack.backend.config.properties;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -19,6 +20,7 @@ public class AppProperties {
     private BusinessLines businessLines = new BusinessLines();
     private Integrations integrations = new Integrations();
     private Datasource datasource = new Datasource();
+    private Integration integration = new Integration();
 
     /**
      * Propiedades de metadata Swagger.
@@ -86,8 +88,16 @@ public class AppProperties {
     public static class Integrations {
         private int defaultConnectTimeoutMs = 60000;
         private int defaultReadTimeoutMs = 60000;
+        private List<String> tlsProtocols = List.of("TLSv1.2");
         private boolean mockEnabled;
-        private boolean sslVerificationDisabled = false;
+    }
+
+    /**
+     * Propiedades por proveedor externo (app.integration.providers.*).
+     */
+    @Data
+    public static class Integration {
+        private Map<String, ProviderProperties> providers = new HashMap<>();
     }
 
     /**
@@ -113,6 +123,7 @@ public class AppProperties {
      */
     @Data
     public static class ProviderProperties {
+        private String baseUrl;
         private String technicalUser;
         private String providerName;
         private String categoryCode;
@@ -144,6 +155,27 @@ public class AppProperties {
         private String parish;
         private Map<String, String> offerIds = new HashMap<>();
         private ProviderTokenProperties auth = new ProviderTokenProperties();
+        private Map<String, ProviderCapabilityProperties> services = new HashMap<>();
+    }
+
+    /**
+     * Configuracion de operaciones por capability (cashin/cashout).
+     */
+    @Data
+    public static class ProviderCapabilityProperties {
+        private ProviderOperationProperties cashin = new ProviderOperationProperties();
+        private ProviderOperationProperties cashout = new ProviderOperationProperties();
+    }
+
+    /**
+     * Configuracion de una operacion externa concreta (item, path, capabilities).
+     */
+    @Data
+    public static class ProviderOperationProperties {
+        private String item;
+        private String path;
+        private String capabilities;
+        private String name;
     }
 
     /**
@@ -162,6 +194,7 @@ public class AppProperties {
      */
     @Data
     public static class ProviderLoginProperties {
+        private String path;
         private String username;
         private String password;
         private String productToSell;
