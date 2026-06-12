@@ -1,6 +1,6 @@
 SELECT
     TO_CHAR(sp.TERCERO)     AS service_provider_code,
-    sp.CODIGO_ITEM_RMS      AS rms_item_code,
+    TRIM(sp.CODIGO_ITEM_RMS) AS rms_item_code,
     CASE WHEN cs.ACTIVO = 'S' THEN 1 ELSE 0 END AS is_active,
     CASE WHEN sp.FLG_PAGO_MIXTO = 'S' THEN 1 ELSE 0 END AS is_mixed_payment,
     sp.FLG_ITEM             AS flg_item,
