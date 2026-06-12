@@ -1,0 +1,102 @@
+-- ============================================================
+-- Ejecutar como: TUKUNAFUNC (después de 06_DDL_INPUT_FIELDS.sql)
+-- Inserta los campos de entrada para ECUABET y BET593 en QA.
+--
+-- Valores QA confirmados (2026-06-12):
+--   ECUABET  category=983  subcategory=1118(CI) / 1119(CO)  svc=12661912
+--   BET593   category=983  subcategory=1120(CI) / 1121(CO)  svc=408403
+-- ============================================================
+
+-- -------------------------------------------------------
+-- ECUABET CASH_IN (1118 / 12661912 / 100713841)
+-- PRECHECK: busca usuario por documento
+-- -------------------------------------------------------
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1118', '12661912', '100713841',
+     'document', 'Cédula / RUC / Pasaporte', 'STRING', 'PRECHECK', 1, 'ID', 1);
+
+-- -------------------------------------------------------
+-- ECUABET CASH_OUT (1119 / 12661912 / 100708846)
+-- PRECHECK: verifica retiro por withdrawId + password + monto
+-- -------------------------------------------------------
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1119', '12661912', '100708846',
+     'withdrawId', 'Número de retiro', 'STRING', 'PRECHECK', 1, 'ID', 1);
+
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1119', '12661912', '100708846',
+     'password', 'Contraseña de retiro', 'STRING', 'PRECHECK', 1, 'PASS', 2);
+
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1119', '12661912', '100708846',
+     'amount', 'Monto', 'DOUBLE', 'PRECHECK', 1, 'AMOUNT', 3);
+
+-- -------------------------------------------------------
+-- BET593 CASH_IN (1120 / 408403 / 100708850)
+-- PRECHECK: valida usuario por documento + teléfono + monto
+-- -------------------------------------------------------
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1120', '408403', '100708850',
+     'document', 'Cédula / RUC / Pasaporte', 'STRING', 'PRECHECK', 1, 'ID', 1);
+
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1120', '408403', '100708850',
+     'phone', 'Teléfono', 'STRING', 'PRECHECK', 1, 'PHONE', 2);
+
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1120', '408403', '100708850',
+     'amount', 'Monto', 'DOUBLE', 'PRECHECK', 1, 'AMOUNT', 3);
+
+-- -------------------------------------------------------
+-- BET593 CASH_OUT (1121 / 408403 / 100708848)
+-- No tiene PRECHECK — el flujo empieza en EXECUTE.
+-- EXECUTE: requiere withdrawId + documento + monto
+-- -------------------------------------------------------
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1121', '408403', '100708848',
+     'withdrawId', 'ID de retiro', 'STRING', 'EXECUTE', 1, 'ID', 1);
+
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1121', '408403', '100708848',
+     'document', 'Cédula / RUC / Pasaporte', 'STRING', 'EXECUTE', 1, 'ID', 2);
+
+INSERT INTO IN_OMNI_INPUT_FIELDS
+    (CATEGORY_CODE, SUBCATEGORY_CODE, SERVICE_PROVIDER_CODE, RMS_ITEM_CODE,
+     FIELD_ID, LABEL, FIELD_TYPE, CAPABILITY, IS_REQUIRED, FIELD_GROUP, FIELD_ORDER)
+VALUES
+    ('983', '1121', '408403', '100708848',
+     'amount', 'Monto', 'DOUBLE', 'EXECUTE', 1, 'AMOUNT', 3);
+
+COMMIT;
+
+-- Verificar:
+-- SELECT SUBCATEGORY_CODE, RMS_ITEM_CODE, FIELD_ID, CAPABILITY, FIELD_ORDER
+--   FROM IN_OMNI_INPUT_FIELDS
+--  ORDER BY SUBCATEGORY_CODE, CAPABILITY, FIELD_ORDER;

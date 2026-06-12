@@ -127,9 +127,9 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .collect(Collectors.toMap(MovementTypeRow::rmsItemCode, MovementTypeRow::movementType,
                         (a, b) -> a, LinkedHashMap::new));
 
-        // --- AD: campos de entrada (stub — retorna 0 filas) ---
-        List<InputFieldRow> inputFieldRows = rmsJdbcTemplate.query(
-                sqlProvider.getInputFieldsSql(), adParams, inputFieldRowMapper());
+        // --- PROD (TUKUNAFUNC): campos de entrada por item (IN_OMNI_INPUT_FIELDS) ---
+        List<InputFieldRow> inputFieldRows = prodJdbcTemplate.query(
+                sqlProvider.getInputFieldsSql(), rmsParams, inputFieldRowMapper());
         log.debug("[BL-catalog] inputFieldRows={}", inputFieldRows.size());
 
         // --- Mapas de lookup ---
