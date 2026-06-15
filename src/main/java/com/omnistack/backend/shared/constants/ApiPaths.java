@@ -18,6 +18,10 @@ public final class ApiPaths {
      */
     public static final String V1_PRECHECK = "/v1/preCheck";
     /**
+     * Alias lowercase del endpoint de prevalidacion (compatibilidad con front-ends que usan minusculas).
+     */
+    public static final String V1_PRECHECK_LOWER = "/v1/precheck";
+    /**
      * Endpoint de ejecucion transaccional.
      */
     public static final String V1_EXECUTE = "/v1/execute";
@@ -33,6 +37,10 @@ public final class ApiPaths {
      * Endpoint de creacion de ticket de apuesta (Pega3).
      */
     public static final String V1_CREATE_TICKET = "/v1/createTicket";
+    /**
+     * Alias lowercase del endpoint de creacion de ticket (compatibilidad con front-ends que usan minusculas).
+     */
+    public static final String V1_CREATE_TICKET_LOWER = "/v1/createticket";
     /**
      * Endpoint de refresco manual de token de proveedor.
      */
