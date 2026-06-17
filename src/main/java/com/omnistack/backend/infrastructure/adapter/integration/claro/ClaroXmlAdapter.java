@@ -139,6 +139,9 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             String elementName,
             String requestAmount,
             String phone) {
+        if (responseXml.contains("env:Fault") || responseXml.contains(":Fault>")) {
+            throw new IntegrationException("CLARO SOAP Fault: " + extractFaultString(responseXml));
+        }
         Map<String, String> fields;
         try {
             fields = parseXmlFields(responseXml, elementName);
@@ -197,15 +200,17 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             String uuid,
             String wsKey) {
         String url = operationPath;
+        String soapEnvelope = buildSoapEnvelope(xmlBody);
         long startMs = System.currentTimeMillis();
-        log.info("CLARO {} request url={} body={}", logOperation, url, xmlBody);
+        log.info("CLARO {} request url={} body={}", logOperation, url, soapEnvelope);
 
         String responseBody;
         try {
             responseBody = omnistackWebClient.post()
                     .uri(url)
-                    .contentType(MediaType.APPLICATION_XML)
-                    .bodyValue(xmlBody)
+                    .contentType(MediaType.parseMediaType("text/xml;charset=UTF-8"))
+                    .header("SOAPAction", "\"\"")
+                    .bodyValue(soapEnvelope)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                             .defaultIfEmpty("")
@@ -217,7 +222,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
                                         .providerKey(PROVIDER_KEY)
                                         .wsKey(wsKey)
                                         .url(url)
-                                        .requestJson(xmlBody)
+                                        .requestJson(soapEnvelope)
                                         .responseJson(body)
                                         .durationMs(System.currentTimeMillis() - startMs)
                                         .isError(true)
@@ -234,7 +239,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
                     .providerKey(PROVIDER_KEY)
                     .wsKey(wsKey)
                     .url(url)
-                    .requestJson(xmlBody)
+                    .requestJson(soapEnvelope)
                     .responseJson(null)
                     .durationMs(System.currentTimeMillis() - startMs)
                     .isError(true)
@@ -252,12 +257,26 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
                 .providerKey(PROVIDER_KEY)
                 .wsKey(wsKey)
                 .url(url)
-                .requestJson(xmlBody)
+                .requestJson(soapEnvelope)
                 .responseJson(responseBody)
                 .durationMs(System.currentTimeMillis() - startMs)
                 .isError(false)
                 .build());
         return responseBody;
+    }
+
+    private static String buildSoapEnvelope(String umsprot) {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<soapenv:Envelope"
+                + " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\""
+                + " xmlns:ser=\"http://service.claro.com.ec/\">"
+                + "<soapenv:Header/>"
+                + "<soapenv:Body>"
+                + "<ser:OnMensaje>"
+                + "<ser:mensaje><![CDATA[" + umsprot + "]]></ser:mensaje>"
+                + "</ser:OnMensaje>"
+                + "</soapenv:Body>"
+                + "</soapenv:Envelope>";
     }
 
     private static String field(String elementName, String fieldName, String value) {
@@ -281,6 +300,15 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         return provider;
     }
 
+
+    private static String extractFaultString(String xml) {
+        int start = xml.indexOf("<faultstring>");
+        int end = xml.indexOf("</faultstring>");
+        if (start >= 0 && end > start) {
+            return xml.substring(start + "<faultstring>".length(), end).trim();
+        }
+        return "Error SOAP sin detalle";
+    }
 
     private String rootCauseMessage(Throwable exception) {
         Throwable current = exception;
