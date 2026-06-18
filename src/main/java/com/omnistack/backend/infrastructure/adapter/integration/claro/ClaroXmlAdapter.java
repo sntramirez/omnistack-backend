@@ -81,15 +81,15 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             String subscriberId) {
         return "<umsprot version=\"1\">"
                 + "<exec_req function=\"validateRechargeRetail\">"
-                + field("validateRechargeRetail", "COMPANYID", provider.getCompanyId())
-                + field("validateRechargeRetail", "EXTERNALOPERATION", provider.getExternalOperation())
+                + field("validateRechargeRetail", "COMPANYID", command.getCompanyId())
+                + field("validateRechargeRetail", "EXTERNALOPERATION", command.getExternalOperation())
                 + field("validateRechargeRetail", "EXTERNALTRANSACTIONDATE", trxDate)
                 + field("validateRechargeRetail", "USERNAME", provider.getAuth().getLogin().getUsername())
                 + field("validateRechargeRetail", "PASSWORD", provider.getAuth().getLogin().getPassword())
-                + field("validateRechargeRetail", "MEDIAID", provider.getMediaId())
+                + field("validateRechargeRetail", "MEDIAID", command.getMediaId())
                 + field("validateRechargeRetail", "TERMINAL", provider.getShopIp())
-                + field("validateRechargeRetail", "CODCAJA", provider.getCodCaja())
-                + field("validateRechargeRetail", "CODSITE", provider.getCodSite())
+                + field("validateRechargeRetail", "CODCAJA", command.getCodCaja())
+                + field("validateRechargeRetail", "CODSITE", command.getCodSite())
                 + field("validateRechargeRetail", "SUBSCRIBERID", subscriberId)
                 + field("validateRechargeRetail", "QUANTITY", command.getAmount())
                 + field("validateRechargeRetail", "OFFERID", command.getOfferId())

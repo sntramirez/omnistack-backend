@@ -57,6 +57,7 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
     private final ProviderConfigService providerConfigService;
     private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
+    private final com.omnistack.backend.application.service.AdItemServicioService adItemServicioService;
 
     @Override
     public boolean supports(ServiceDefinition serviceDefinition, Capability capability) {
@@ -92,16 +93,22 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
         String operationUrl = providerWsService.requireUrl(PROVIDER_KEY, wsKey, PROVIDER_NAME);
         String offerId = resolveOfferId(providerWsDefsService.getOfferIds(PROVIDER_KEY, wsKey), request.getRmsItemCode());
         String amount = formatAmount(request.getAmount());
+        String rmsItemCode = request.getRmsItemCode();
 
         ClaroPrecheckCommand command = ClaroPrecheckCommand.builder()
                 .uuid(request.getUuid()).chain(request.getChain()).store(request.getStore())
                 .storeName(request.getStoreName()).pos(request.getPos())
                 .channelPos(request.getChannelPos().name())
                 .categoryCode(request.getCategoryCode()).subcategoryCode(request.getSubcategoryCode())
-                .serviceProviderCode(request.getServiceProviderCode()).rmsItemCode(request.getRmsItemCode())
+                .serviceProviderCode(request.getServiceProviderCode()).rmsItemCode(rmsItemCode)
                 .phone(request.getPhone())
                 .amount(amount)
                 .offerId(offerId)
+                .companyId(providerConfigService.mapValue(PROVIDER_KEY, "company_id", request.getChain()))
+                .externalOperation(adItemServicioService.getTag(rmsItemCode, "EXTERNALOPERATION"))
+                .mediaId(adItemServicioService.getTag(rmsItemCode, "MEDIAID"))
+                .codCaja(adItemServicioService.getTag(rmsItemCode, "CODCAJA"))
+                .codSite(adItemServicioService.getTag(rmsItemCode, "CODSITE"))
                 .build();
 
         ExternalTransactionResponse externalResponse = claroPrecheckPort.validateRecharge(command, operationUrl);

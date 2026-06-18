@@ -2,21 +2,13 @@
 -- Ejecutar como: TUKUNAFUNC
 -- Requiere: script 14 ejecutado previamente.
 --
--- A) Registros de HOMOLOGACION para CLARO:
---    VALOR_ORIGEN = valor que envía el POS (chain)
---    CONFIG_VALOR = valor que espera CLARO
+-- HOMOLOGACION: company_id por cadena
+--   VALOR_ORIGEN = valor que envía el POS (chain)
+--   CONFIG_VALOR = COMPANYID que CLARO espera según el contrato
 --
--- B) Registros de CONFIG FIJA para CLARO:
---    Campos que faltan en IN_OMNI_PROVEEDOR_CONFIG y que
---    ClaroXmlAdapter necesita (estaban vacíos en el request).
---    VALOR_ORIGEN = NULL (sin homologación, valor único por proveedor)
+-- NOTA: media_id, cod_caja, cod_site van en GPF_OMNISTACK.AD_ITEM_SERVICIO
+--       (script 16) porque son config por item, no por proveedor.
 -- ============================================================
-
--- ============================================================
--- A) HOMOLOGACION: company_id por cadena
--- ============================================================
--- chain = valor que el POS envía en el request
--- CONFIG_VALOR = COMPANYID que CLARO espera según el contrato
 
 INSERT INTO TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG
   (ID_CONFIG, PROVEEDOR_KEY, CONFIG_KEY, TIPO_CONFIG, CONFIG_VALOR, VALOR_ORIGEN)
@@ -32,29 +24,10 @@ VALUES (SEQ_IN_OMNI_PROVEEDOR_CONFIG.NEXTVAL,
 
 -- ⚠ Agregar más cadenas según acuerdo con CLARO antes de go-live
 
--- ============================================================
--- B) CONFIG FIJA: campos sin homologación que faltaban
--- ============================================================
-
-INSERT INTO TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG
-  (ID_CONFIG, PROVEEDOR_KEY, CONFIG_KEY, TIPO_CONFIG, CONFIG_VALOR, VALOR_ORIGEN)
-VALUES (SEQ_IN_OMNI_PROVEEDOR_CONFIG.NEXTVAL,
-  'claro', 'media_id', 'TEXTO', 'RETA', NULL);
-
-INSERT INTO TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG
-  (ID_CONFIG, PROVEEDOR_KEY, CONFIG_KEY, TIPO_CONFIG, CONFIG_VALOR, VALOR_ORIGEN)
-VALUES (SEQ_IN_OMNI_PROVEEDOR_CONFIG.NEXTVAL,
-  'claro', 'cod_caja', 'TEXTO', 'DA00004', NULL);
-
-INSERT INTO TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG
-  (ID_CONFIG, PROVEEDOR_KEY, CONFIG_KEY, TIPO_CONFIG, CONFIG_VALOR, VALOR_ORIGEN)
-VALUES (SEQ_IN_OMNI_PROVEEDOR_CONFIG.NEXTVAL,
-  'claro', 'cod_site', 'TEXTO', '10000004', NULL);
-
 COMMIT;
 
--- Verificar homologaciones:
--- SELECT CONFIG_KEY, CONFIG_VALOR, VALOR_ORIGEN, TIPO_CONFIG
+-- Verificar:
+-- SELECT CONFIG_KEY, CONFIG_VALOR, VALOR_ORIGEN
 --   FROM TUKUNAFUNC.IN_OMNI_PROVEEDOR_CONFIG
 --  WHERE PROVEEDOR_KEY = 'claro'
 --  ORDER BY CONFIG_KEY, VALOR_ORIGEN;
