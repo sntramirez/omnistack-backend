@@ -143,6 +143,9 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             throw new IntegrationException("CLARO SOAP Fault: " + extractFaultString(responseXml));
         }
         String umsprot = extractUmsprotFromSoapResponse(responseXml);
+        if (!umsprot.trim().startsWith("<")) {
+            throw new IntegrationException("CLARO rechazo la solicitud (parametros invalidos): " + umsprot.trim());
+        }
         Map<String, String> fields;
         try {
             fields = parseXmlFields(umsprot, elementName);
