@@ -17,15 +17,15 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "app.datasource.prod.url")
+@ConditionalOnProperty(name = "app.datasource.rms.url")
 public class OracleAdItemServicioAdapter implements AdItemServicioPort {
 
     private static final String LOAD_ALL_SQL =
             "SELECT TRIM(sp.CODIGO_ITEM_RMS) AS rms_item_code, "
             + "LOWER(ai.TAG) AS tag, "
             + "ai.VALOR_TAG "
-            + "FROM AD_ITEM_SERVICIO ai "
-            + "JOIN AD_SERVICIO_PARAMETROS sp ON sp.ID_CONFIG = ai.ID_CONFIG "
+            + "FROM gpf_omnistack.AD_ITEM_SERVICIO ai "
+            + "JOIN gpf_omnistack.AD_SERVICIO_PARAMETROS sp ON sp.ID_CONFIG = ai.ID_CONFIG "
             + "WHERE ai.ACTIVO = 'S' "
             + "AND ai.TAG IS NOT NULL "
             + "AND ai.VALOR_TAG IS NOT NULL";
@@ -33,7 +33,7 @@ public class OracleAdItemServicioAdapter implements AdItemServicioPort {
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public OracleAdItemServicioAdapter(
-            @Qualifier("prodOracleJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
+            @Qualifier("rmsOracleJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
