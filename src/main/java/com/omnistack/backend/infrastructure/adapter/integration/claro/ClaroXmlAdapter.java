@@ -93,7 +93,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
                 + field("validateRechargeRetail", "SUBSCRIBERID", subscriberId)
                 + field("validateRechargeRetail", "QUANTITY", command.getAmount())
                 + field("validateRechargeRetail", "OFFERID", command.getOfferId())
-                + field("validateRechargeRetail", "EXTERNALTRANSACTIONID", command.getUuid())
+                + field("validateRechargeRetail", "EXTERNALTRANSACTIONID", toNumericTransactionId(command.getUuid()))
                 + "</exec_req>"
                 + "</umsprot>";
     }
@@ -123,7 +123,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
                 + field("processRechargeRetail", "QUANTITY", command.getAmount())
                 + field("processRechargeRetail", "OFFERID", command.getOfferId())
                 + field("processRechargeRetail", "AUTHORIZATIONNUMBER", command.getAuthorizationNumber())
-                + field("processRechargeRetail", "EXTERNALTRANSACTIONID", command.getUuid())
+                + field("processRechargeRetail", "EXTERNALTRANSACTIONID", toNumericTransactionId(command.getUuid()))
                 + field("processRechargeRetail", "TOKEN", provider.getToken())
                 + field("processRechargeRetail", "LATITUDE", provider.getLatitude())
                 + field("processRechargeRetail", "LONGITUDE", provider.getLongitude())
@@ -342,5 +342,12 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         return message == null || message.isBlank()
                 ? current.getClass().getSimpleName()
                 : current.getClass().getSimpleName() + ": " + message;
+    }
+
+    // CLARO exige EXTERNALTRANSACTIONID como NUMBER(15). El uuid de OmniStack es un UUID4
+    // (alfanumérico), así que derivamos un número de 15 dígitos determinístico a partir de él.
+    private static String toNumericTransactionId(String uuid) {
+        long bits = java.util.UUID.fromString(uuid).getLeastSignificantBits();
+        return String.format("%015d", Math.abs(bits) % 1_000_000_000_000_000L);
     }
 }
