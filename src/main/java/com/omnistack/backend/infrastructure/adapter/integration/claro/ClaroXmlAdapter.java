@@ -142,9 +142,10 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         if (responseXml.contains("env:Fault") || responseXml.contains(":Fault>")) {
             throw new IntegrationException("CLARO SOAP Fault: " + extractFaultString(responseXml));
         }
+        String umsprot = extractUmsprotFromSoapResponse(responseXml);
         Map<String, String> fields;
         try {
-            fields = parseXmlFields(responseXml, elementName);
+            fields = parseXmlFields(umsprot, elementName);
         } catch (Exception e) {
             throw new IntegrationException("CLARO retorno XML no parseable: " + e.getMessage(), e);
         }
@@ -300,6 +301,28 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         return provider;
     }
 
+
+    private static String extractUmsprotFromSoapResponse(String responseXml) {
+        if (!responseXml.contains("Envelope")) {
+            return responseXml;
+        }
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new InputSource(new StringReader(responseXml)));
+            NodeList returnNodes = doc.getElementsByTagName("return");
+            if (returnNodes.getLength() > 0) {
+                String content = returnNodes.item(0).getTextContent();
+                if (content != null && !content.isBlank()) {
+                    return content;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("CLARO no se pudo extraer umsprot del SOAP response: {}", e.getMessage());
+        }
+        return responseXml;
+    }
 
     private static String extractFaultString(String xml) {
         int start = xml.indexOf("<faultstring>");
