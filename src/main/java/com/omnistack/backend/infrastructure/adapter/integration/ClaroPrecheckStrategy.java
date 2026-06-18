@@ -107,8 +107,6 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
                 .companyId(providerConfigService.mapValue(PROVIDER_KEY, "company_id", request.getChain()))
                 .externalOperation(adItemServicioService.getTag(rmsItemCode, "EXTERNALOPERATION"))
                 .mediaId(providerConfigService.getString(PROVIDER_KEY, "media_id"))
-                .codCaja(adItemServicioService.getTag(rmsItemCode, "CODCAJA"))
-                .codSite(adItemServicioService.getTag(rmsItemCode, "CODSITE"))
                 .build();
 
         ExternalTransactionResponse externalResponse = claroPrecheckPort.validateRecharge(command, operationUrl);
