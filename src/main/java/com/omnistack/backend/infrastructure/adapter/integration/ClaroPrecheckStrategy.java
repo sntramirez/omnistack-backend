@@ -106,7 +106,7 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
                 .offerId(offerId)
                 .companyId(providerConfigService.mapValue(PROVIDER_KEY, "company_id", request.getChain()))
                 .externalOperation(adItemServicioService.getTag(rmsItemCode, "EXTERNALOPERATION"))
-                .mediaId(adItemServicioService.getTag(rmsItemCode, "MEDIAID"))
+                .mediaId(providerConfigService.getString(PROVIDER_KEY, "media_id"))
                 .codCaja(adItemServicioService.getTag(rmsItemCode, "CODCAJA"))
                 .codSite(adItemServicioService.getTag(rmsItemCode, "CODSITE"))
                 .build();
