@@ -40,7 +40,7 @@ public class DefaultProviderFlowResolver implements ProviderFlowResolver {
                 .filter(candidate -> candidate.supports(serviceDefinition, capability))
                 .findFirst()
                 .orElseThrow(() -> new IntegrationException(
-                        "No existe configuracion de endpoint externo para el proveedor/capacidad solicitados"));
+                        "El producto solicitado no esta completamente configurado"));
 
         log.info(
                 "Provider flow resolved. capability={}, categoryCode={}, subcategoryCode={}, serviceProviderCode={}, rmsItemCode={}, movementType={}, strategy={}",
