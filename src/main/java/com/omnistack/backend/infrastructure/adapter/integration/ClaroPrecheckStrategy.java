@@ -86,7 +86,9 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
                 .amount(amount)
                 .offerId(offerId)
                 .companyId(providerConfigService.mapValue(PROVIDER_KEY, "company_id", request.getChain()))
-                .externalOperation(adItemServicioService.getTag(rmsItemCode, "EXTERNALOPERATION"))
+                // TODO TEMPORAL: hardcode mientras se corre el script 16 en QA (AD_ITEM_SERVICIO tiene 136/150/132
+                // en vez de RECARGA_DATOS). Revertir a adItemServicioService.getTag(rmsItemCode, "EXTERNALOPERATION").
+                .externalOperation("RECARGA_DATOS")
                 .mediaId(providerConfigService.getString(PROVIDER_KEY, "media_id"))
                 .build();
 
