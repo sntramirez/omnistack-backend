@@ -20,4 +20,6 @@ public class ClaroExecuteCommand {
     String amount;
     String offerId;
     String authorizationNumber;
+    String companyId;
+    String externalOperation;
 }

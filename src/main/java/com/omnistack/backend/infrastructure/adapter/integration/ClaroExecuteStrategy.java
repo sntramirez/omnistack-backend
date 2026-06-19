@@ -75,6 +75,7 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
         String operationUrl = providerWsService.requireUrl(PROVIDER_KEY, wsKey, PROVIDER_NAME);
         String rmsItemCode = request.getRmsItemCode();
         String offerId = adItemServicioService.requireTag(rmsItemCode, "OFFERID", PROVIDER_NAME);
+        String externalOperation = adItemServicioService.requireTag(rmsItemCode, "EXTERNALOPERATION", PROVIDER_NAME);
         String amount = formatAmount(request.getAmount());
 
         ClaroExecuteCommand command = ClaroExecuteCommand.builder()
@@ -87,6 +88,8 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
                 .amount(amount)
                 .offerId(offerId)
                 .authorizationNumber(request.getAuthorization())
+                .companyId(providerConfigService.mapValue(PROVIDER_KEY, "company_id", request.getChain()))
+                .externalOperation(externalOperation)
                 .build();
 
         ExternalTransactionResponse externalResponse = claroExecutePort.processRecharge(command, operationUrl);

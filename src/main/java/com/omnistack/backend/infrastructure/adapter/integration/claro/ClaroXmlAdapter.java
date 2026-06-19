@@ -105,9 +105,9 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             String subscriberId) {
         return "<umsprot version=\"1\">"
                 + "<exec_req function=\"processRechargeRetail\">"
-                + field("processRechargeRetail", "COMPANYID", provider.getCompanyId())
+                + field("processRechargeRetail", "COMPANYID", command.getCompanyId())
                 + field("processRechargeRetail", "CONSUMERID", provider.getConsumerId())
-                + field("processRechargeRetail", "EXTERNALOPERATION", provider.getExternalOperation())
+                + field("processRechargeRetail", "EXTERNALOPERATION", command.getExternalOperation())
                 + field("processRechargeRetail", "EXTERNALTRANSACTIONDATE", trxDate)
                 + field("processRechargeRetail", "CHANNELID", provider.getChannelId())
                 + field("processRechargeRetail", "MEDIAID", provider.getMediaId())
