@@ -11,6 +11,12 @@ import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ProviderCallLog;
 import com.omnistack.backend.shared.exception.IntegrationException;
 import java.io.StringReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
@@ -19,16 +25,11 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import reactor.core.publisher.Mono;
 
 /**
  * Adapter XML para las operaciones PRECHECK y EXECUTE del proveedor CLARO.
@@ -44,9 +45,12 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
     private static final String WS_KEY_PRECHECK = "PRECHECK.CASHIN";
     private static final String WS_KEY_EXECUTE = "EXECUTE.CASHIN";
 
-    private final WebClient omnistackWebClient;
     private final ProviderConfigService providerConfigService;
     private final WsExtLogService wsExtLogService;
+
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
     @Override
     public ExternalTransactionResponse validateRecharge(ClaroPrecheckCommand command, String operationPath) {
@@ -210,45 +214,36 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
 
         String responseBody;
         try {
-            responseBody = omnistackWebClient.post()
-                    .uri(url)
-                    .contentType(MediaType.parseMediaType("text/xml;charset=UTF-8"))
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "text/xml;charset=UTF-8")
                     .header("SOAPAction", "\"\"")
-                    .bodyValue(soapEnvelope)
-                    .retrieve()
-                    .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
-                            .defaultIfEmpty("")
-                            .flatMap(body -> {
-                                log.error("CLARO {} error url={} body={}", logOperation, url, body);
-                                String errMsg = "Error HTTP al invocar " + errorOperation + ": " + body;
-                                wsExtLogService.log(ProviderCallLog.builder()
-                                        .uuid(uuid)
-                                        .providerKey(PROVIDER_KEY)
-                                        .wsKey(wsKey)
-                                        .url(url)
-                                        .requestJson(soapEnvelope)
-                                        .responseJson(body)
-                                        .durationMs(System.currentTimeMillis() - startMs)
-                                        .isError(true)
-                                        .errorMessage(errMsg)
-                                        .build());
-                                return Mono.error(new IntegrationException(errMsg));
-                            }))
-                    .bodyToMono(String.class)
-                    .block();
-        } catch (WebClientRequestException exception) {
+                    .POST(HttpRequest.BodyPublishers.ofString(soapEnvelope, StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            responseBody = response.body();
+
+            if (response.statusCode() >= 400) {
+                log.error("CLARO {} error url={} status={} body={}", logOperation, url, response.statusCode(), responseBody);
+                String errMsg = "Error HTTP " + response.statusCode() + " al invocar " + errorOperation + ": " + responseBody;
+                wsExtLogService.log(ProviderCallLog.builder()
+                        .uuid(uuid).providerKey(PROVIDER_KEY).wsKey(wsKey).url(url)
+                        .requestJson(soapEnvelope).responseJson(responseBody)
+                        .durationMs(System.currentTimeMillis() - startMs)
+                        .isError(true).errorMessage(errMsg).build());
+                throw new IntegrationException(errMsg);
+            }
+        } catch (IntegrationException e) {
+            throw e;
+        } catch (Exception exception) {
             String errMsg = "Error de conexion al invocar " + errorOperation + ": " + rootCauseMessage(exception);
             wsExtLogService.log(ProviderCallLog.builder()
-                    .uuid(uuid)
-                    .providerKey(PROVIDER_KEY)
-                    .wsKey(wsKey)
-                    .url(url)
-                    .requestJson(soapEnvelope)
-                    .responseJson(null)
+                    .uuid(uuid).providerKey(PROVIDER_KEY).wsKey(wsKey).url(url)
+                    .requestJson(soapEnvelope).responseJson(null)
                     .durationMs(System.currentTimeMillis() - startMs)
-                    .isError(true)
-                    .errorMessage(errMsg)
-                    .build());
+                    .isError(true).errorMessage(errMsg).build());
             throw new IntegrationException(errMsg, exception);
         }
 
@@ -257,15 +252,10 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         }
         log.info("CLARO {} response url={} body={}", logOperation, url, responseBody);
         wsExtLogService.log(ProviderCallLog.builder()
-                .uuid(uuid)
-                .providerKey(PROVIDER_KEY)
-                .wsKey(wsKey)
-                .url(url)
-                .requestJson(soapEnvelope)
-                .responseJson(responseBody)
+                .uuid(uuid).providerKey(PROVIDER_KEY).wsKey(wsKey).url(url)
+                .requestJson(soapEnvelope).responseJson(responseBody)
                 .durationMs(System.currentTimeMillis() - startMs)
-                .isError(false)
-                .build());
+                .isError(false).build());
         return responseBody;
     }
 
