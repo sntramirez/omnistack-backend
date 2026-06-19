@@ -10,7 +10,6 @@ import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrat
 import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
 import com.omnistack.backend.application.service.AdItemServicioService;
 import com.omnistack.backend.application.service.ProviderConfigService;
-import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -36,7 +35,6 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
 
     private final ClaroPrecheckPort claroPrecheckPort;
     private final ProviderConfigService providerConfigService;
-    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
     private final AdItemServicioService adItemServicioService;
 
@@ -52,7 +50,7 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
                 && providerWsService.hasUrl(PROVIDER_KEY, wsKey)
-                && providerWsDefsService.getOfferIds(PROVIDER_KEY, wsKey).containsKey(serviceDefinition.getRmsItemCode());
+                && adItemServicioService.hasTag(serviceDefinition.getRmsItemCode(), "OFFERID");
     }
 
     @Override
@@ -72,9 +70,9 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
 
         String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
         String operationUrl = providerWsService.requireUrl(PROVIDER_KEY, wsKey, PROVIDER_NAME);
-        String offerId = resolveOfferId(providerWsDefsService.getOfferIds(PROVIDER_KEY, wsKey), request.getRmsItemCode());
-        String amount = formatAmount(request.getAmount());
         String rmsItemCode = request.getRmsItemCode();
+        String offerId = adItemServicioService.requireTag(rmsItemCode, "OFFERID", PROVIDER_NAME);
+        String amount = formatAmount(request.getAmount());
 
         ClaroPrecheckCommand command = ClaroPrecheckCommand.builder()
                 .uuid(request.getUuid()).chain(request.getChain()).store(request.getStore())
@@ -86,9 +84,7 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
                 .amount(amount)
                 .offerId(offerId)
                 .companyId(providerConfigService.mapValue(PROVIDER_KEY, "company_id", request.getChain()))
-                // TODO TEMPORAL: hardcode mientras se corre el script 16 en QA (AD_ITEM_SERVICIO tiene 136/150/132
-                // en vez de RECARGA_DATOS). Revertir a adItemServicioService.getTag(rmsItemCode, "EXTERNALOPERATION").
-                .externalOperation("RECARGA_DATOS")
+                .externalOperation(adItemServicioService.requireTag(rmsItemCode, "EXTERNALOPERATION", PROVIDER_NAME))
                 .mediaId(providerConfigService.getString(PROVIDER_KEY, "media_id"))
                 .build();
 
@@ -120,15 +116,6 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
         }
 
         return builder.build();
-    }
-
-    private String resolveOfferId(Map<String, String> offerIds, String rmsItemCode) {
-        String offerId = offerIds.get(rmsItemCode);
-        if (offerId == null || offerId.isBlank()) {
-            throw new IntegrationException(
-                    "CLARO no tiene OFFERID configurado para rms_item_code=" + rmsItemCode);
-        }
-        return offerId;
     }
 
     private static String formatAmount(BigDecimal amount) {

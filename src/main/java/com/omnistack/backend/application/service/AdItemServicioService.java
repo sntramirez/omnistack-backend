@@ -1,6 +1,7 @@
 package com.omnistack.backend.application.service;
 
 import com.omnistack.backend.application.port.out.AdItemServicioPort;
+import com.omnistack.backend.shared.exception.IntegrationException;
 import jakarta.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.Map;
@@ -43,5 +44,19 @@ public class AdItemServicioService {
     public String getTag(String rmsItemCode, String tag) {
         if (rmsItemCode == null || tag == null) return null;
         return cache.get(rmsItemCode + "|" + tag.toLowerCase());
+    }
+
+    public boolean hasTag(String rmsItemCode, String tag) {
+        String value = getTag(rmsItemCode, tag);
+        return value != null && !value.isBlank();
+    }
+
+    public String requireTag(String rmsItemCode, String tag, String providerName) {
+        String value = getTag(rmsItemCode, tag);
+        if (value == null || value.isBlank()) {
+            throw new IntegrationException(
+                    providerName + " no tiene " + tag + " configurado en AD_ITEM_SERVICIO para rms_item_code=" + rmsItemCode);
+        }
+        return value;
     }
 }
