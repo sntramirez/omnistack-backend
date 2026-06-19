@@ -45,6 +45,10 @@ public final class ApiPaths {
      * Endpoint de refresco manual de token de proveedor.
      */
     public static final String V1_PROVIDER_TOKEN_REFRESH = "/v1/provider-token/refresh";
+    /**
+     * Endpoint de recarga manual de caches de configuracion.
+     */
+    public static final String V1_CACHE_RELOAD = "/v1/cache/reload";
 
     private ApiPaths() {
     }
