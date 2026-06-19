@@ -350,7 +350,13 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
     // CLARO exige EXTERNALTRANSACTIONID como NUMBER(15). El uuid de OmniStack es un UUID4
     // (alfanumérico), así que derivamos un número de 15 dígitos determinístico a partir de él.
     private static String toNumericTransactionId(String uuid) {
-        long bits = java.util.UUID.fromString(uuid).getLeastSignificantBits();
-        return String.format("%015d", Math.abs(bits) % 1_000_000_000_000_000L);
+        try {
+            long bits = java.util.UUID.fromString(uuid).getLeastSignificantBits();
+            return String.format("%015d", Math.abs(bits) % 1_000_000_000_000_000L);
+        } catch (IllegalArgumentException e) {
+            // uuid no tiene formato estándar — usar hash del string
+            long hash = Math.abs((long) uuid.hashCode() * 31L + uuid.length());
+            return String.format("%015d", hash % 1_000_000_000_000_000L);
+        }
     }
 }
