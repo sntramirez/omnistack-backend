@@ -10,13 +10,13 @@ import com.omnistack.backend.domain.model.ClaroPrecheckCommand;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
 import com.omnistack.backend.domain.model.ProviderCallLog;
 import com.omnistack.backend.shared.exception.IntegrationException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringReader;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.HttpURLConnection;
+import java.net.Proxy;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
@@ -48,10 +48,6 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
     private final ProviderConfigService providerConfigService;
     private final WsExtLogService wsExtLogService;
 
-    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .version(HttpClient.Version.HTTP_1_1)
-            .build();
 
     @Override
     public ExternalTransactionResponse validateRecharge(ClaroPrecheckCommand command, String operationPath) {
@@ -215,20 +211,26 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
 
         String responseBody;
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(30))
-                    .header("Content-Type", "text/xml;charset=UTF-8")
-                    .header("SOAPAction", "\"\"")
-                    .POST(HttpRequest.BodyPublishers.ofString(soapEnvelope, StandardCharsets.UTF_8))
-                    .build();
+            byte[] bodyBytes = soapEnvelope.getBytes(StandardCharsets.UTF_8);
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection(Proxy.NO_PROXY);
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(10_000);
+            conn.setReadTimeout(30_000);
+            conn.setRequestProperty("Content-Type", "text/xml;charset=UTF-8");
+            conn.setRequestProperty("SOAPAction", "\"\"");
+            conn.setRequestProperty("Accept", "*/*");
+            conn.setFixedLengthStreamingMode(bodyBytes.length);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(bodyBytes);
+            }
+            int status = conn.getResponseCode();
+            InputStream is = status >= 400 ? conn.getErrorStream() : conn.getInputStream();
+            responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
 
-            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            responseBody = response.body();
-
-            if (response.statusCode() >= 400) {
-                log.error("CLARO {} error url={} status={} body={}", logOperation, url, response.statusCode(), responseBody);
-                String errMsg = "Error HTTP " + response.statusCode() + " al invocar " + errorOperation + ": " + responseBody;
+            if (status >= 400) {
+                log.error("CLARO {} error url={} status={} body={}", logOperation, url, status, responseBody);
+                String errMsg = "Error HTTP " + status + " al invocar " + errorOperation + ": " + responseBody;
                 wsExtLogService.log(ProviderCallLog.builder()
                         .uuid(uuid).providerKey(PROVIDER_KEY).wsKey(wsKey).url(url)
                         .requestJson(soapEnvelope).responseJson(responseBody)
