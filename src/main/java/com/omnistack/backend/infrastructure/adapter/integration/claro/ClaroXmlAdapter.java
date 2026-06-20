@@ -139,21 +139,17 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             String elementName,
             String requestAmount,
             String phone) {
-        if (responseXml.contains("env:Fault") || responseXml.contains(":Fault>")) {
-            throw new IntegrationException("CLARO SOAP Fault: " + extractFaultString(responseXml));
-        }
-        String umsprot = extractUmsprotFromSoapResponse(responseXml);
-        if (!umsprot.trim().startsWith("<")) {
+        if (!responseXml.trim().startsWith("<")) {
             throw new IntegrationException("Servicio CLARO temporalmente no disponible");
         }
         Map<String, String> fields;
         try {
-            fields = parseXmlFields(umsprot, elementName);
+            fields = parseXmlFields(responseXml, elementName);
         } catch (Exception e) {
             throw new IntegrationException("CLARO retorno XML no parseable: " + e.getMessage(), e);
         }
 
-        String idCode = fields.getOrDefault("ID_CODE", "");
+        String idCode = fields.getOrDefault("ID_CODIGO", "");
         String status = fields.getOrDefault("STATUS", "");
         String systemMessage = fields.getOrDefault("SYSTEMMESSAGE", "");
         String authorizationNumber = fields.getOrDefault("AUTHORIZATIONNUMBER", "");
@@ -204,9 +200,8 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             String uuid,
             String wsKey) {
         String url = operationPath;
-        String soapEnvelope = buildSoapEnvelope(xmlBody);
         long startMs = System.currentTimeMillis();
-        log.info("CLARO {} request url={} body={}", logOperation, url, soapEnvelope);
+        log.info("CLARO {} request url={} body={}", logOperation, url, xmlBody);
 
         String responseBody;
         try {
@@ -214,7 +209,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
                     .uri(url)
                     .contentType(MediaType.parseMediaType("text/xml;charset=UTF-8"))
                     .header("SOAPAction", "\"\"")
-                    .bodyValue(soapEnvelope)
+                    .bodyValue(xmlBody)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                             .defaultIfEmpty("")
@@ -223,7 +218,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
                                 String errMsg = "Error HTTP al invocar " + errorOperation + ": " + body;
                                 wsExtLogService.log(ProviderCallLog.builder()
                                         .uuid(uuid).providerKey(PROVIDER_KEY).wsKey(wsKey).url(url)
-                                        .requestJson(soapEnvelope).responseJson(body)
+                                        .requestJson(xmlBody).responseJson(body)
                                         .durationMs(System.currentTimeMillis() - startMs)
                                         .isError(true).errorMessage(errMsg).build());
                                 return Mono.error(new IntegrationException(errMsg));
@@ -234,7 +229,7 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             String errMsg = "Error de conexion al invocar " + errorOperation + ": " + rootCauseMessage(exception);
             wsExtLogService.log(ProviderCallLog.builder()
                     .uuid(uuid).providerKey(PROVIDER_KEY).wsKey(wsKey).url(url)
-                    .requestJson(soapEnvelope).responseJson(null)
+                    .requestJson(xmlBody).responseJson(null)
                     .durationMs(System.currentTimeMillis() - startMs)
                     .isError(true).errorMessage(errMsg).build());
             throw new IntegrationException(errMsg, exception);
@@ -246,24 +241,10 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         log.info("CLARO {} response url={} body={}", logOperation, url, responseBody);
         wsExtLogService.log(ProviderCallLog.builder()
                 .uuid(uuid).providerKey(PROVIDER_KEY).wsKey(wsKey).url(url)
-                .requestJson(soapEnvelope).responseJson(responseBody)
+                .requestJson(xmlBody).responseJson(responseBody)
                 .durationMs(System.currentTimeMillis() - startMs)
                 .isError(false).build());
         return responseBody;
-    }
-
-    private static String buildSoapEnvelope(String umsprot) {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                + "<soapenv:Envelope"
-                + " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\""
-                + " xmlns:ser=\"http://service.claro.com.ec/\">"
-                + "<soapenv:Header/>"
-                + "<soapenv:Body>"
-                + "<ser:OnMensaje>"
-                + "<ser:mensaje><![CDATA[" + umsprot + "]]></ser:mensaje>"
-                + "</ser:OnMensaje>"
-                + "</soapenv:Body>"
-                + "</soapenv:Envelope>";
     }
 
     private static String field(String elementName, String fieldName, String value) {
@@ -287,37 +268,6 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
         return provider;
     }
 
-
-    private static String extractUmsprotFromSoapResponse(String responseXml) {
-        if (!responseXml.contains("Envelope")) {
-            return responseXml;
-        }
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.parse(new InputSource(new StringReader(responseXml)));
-            NodeList returnNodes = doc.getElementsByTagName("return");
-            if (returnNodes.getLength() > 0) {
-                String content = returnNodes.item(0).getTextContent();
-                if (content != null && !content.isBlank()) {
-                    return content;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("CLARO no se pudo extraer umsprot del SOAP response: {}", e.getMessage());
-        }
-        return responseXml;
-    }
-
-    private static String extractFaultString(String xml) {
-        int start = xml.indexOf("<faultstring>");
-        int end = xml.indexOf("</faultstring>");
-        if (start >= 0 && end > start) {
-            return xml.substring(start + "<faultstring>".length(), end).trim();
-        }
-        return "Error SOAP sin detalle";
-    }
 
     private String rootCauseMessage(Throwable exception) {
         Throwable current = exception;
