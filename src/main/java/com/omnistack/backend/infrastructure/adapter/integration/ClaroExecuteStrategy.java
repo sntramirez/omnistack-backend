@@ -49,9 +49,8 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
                 && serviceDefinition.getServiceProviderCode().equalsIgnoreCase(provider.getServiceProviderCode())
                 && serviceDefinition.getSubcategoryCode() != null
                 && serviceDefinition.getSubcategoryCode().equalsIgnoreCase(provider.getSubcategoryCode())
-                && providerWsService.hasUrl(PROVIDER_KEY, wsKey);
-                // TODO: restaurar cuando scripts 14-17 esten ejecutados en QA
-                // && adItemServicioService.hasTag(serviceDefinition.getRmsItemCode(), "OFFERID");
+                && providerWsService.hasUrl(PROVIDER_KEY, wsKey)
+                && adItemServicioService.hasTag(serviceDefinition.getRmsItemCode(), "OFFERID");
     }
 
     @Override
@@ -75,9 +74,8 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
         String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
         String operationUrl = providerWsService.requireUrl(PROVIDER_KEY, wsKey, PROVIDER_NAME);
         String rmsItemCode = request.getRmsItemCode();
-        // TODO: reemplazar hardcode por adItemServicioService.requireTag cuando scripts 14-17 esten en QA
-        String offerId = "150";
-        String externalOperation = "RECARGA_DATOS";
+        String offerId = adItemServicioService.requireTag(rmsItemCode, "OFFERID", PROVIDER_NAME);
+        String externalOperation = adItemServicioService.requireTag(rmsItemCode, "EXTERNALOPERATION", PROVIDER_NAME);
         String amount = formatAmount(request.getAmount());
 
         ClaroExecuteCommand command = ClaroExecuteCommand.builder()
