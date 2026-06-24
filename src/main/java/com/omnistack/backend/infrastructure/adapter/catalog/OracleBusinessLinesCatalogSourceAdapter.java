@@ -379,6 +379,10 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .build();
     }
 
+    private static String bigDecimalToString(BigDecimal value) {
+        return value != null ? value.toPlainString() : "0";
+    }
+
     // ---- Row mappers ----
 
     private RowMapper<AdServiceRow> adServiceRowMapper() {
@@ -389,8 +393,8 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 rs.getInt("is_mixed_payment") == 1,
                 rs.getString("flg_item"),
                 rs.getInt("is_refund") == 1,
-                rs.getString("min_amount"),
-                rs.getString("max_amount"),
+                bigDecimalToString(rs.getBigDecimal("min_amount")),
+                bigDecimalToString(rs.getBigDecimal("max_amount")),
                 rs.getString("timeout_ws_max"),
                 rs.getString("retries_ws_max"),
                 rs.getString("num_tickets"),
