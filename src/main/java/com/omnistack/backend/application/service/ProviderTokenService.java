@@ -187,18 +187,35 @@ public class ProviderTokenService implements ProviderTokenResolverUseCase, Provi
 
     private synchronized ProviderToken getDynamicToken(String providerKey, AppProperties.ProviderProperties provider, boolean forceRefresh) {
         Instant now = clock.instant();
-        // Cache por providerKey, no por categoria/subcategoria/codigo de proveedor: dos
-        // proveedores distintos (ej. tradicional y pega3) pueden compartir esos 3 valores
-        // cuando ninguno tiene subcategoryCode propio configurado (cada uno cubre varias
-        // subcategorias), lo que antes hacia que se pisaran el mismo token en cache.
-        CachedProviderToken current = tokenCache.get(providerKey);
+        // Cache por sesion compartida (login URL + usuario), no por providerKey ni por
+        // categoria/subcategoria/codigo de proveedor. Loteria Nacional mantiene UNA sola
+        // sesion activa por usuario de su lado, sin importar el "productoVender" con el
+        // que se hizo login (tradicional/loteria/pega3 comparten el mismo usuario y
+        // password en IN_OMNI_PROVEEDOR_CONFIG): loguearse para un producto invalida la
+        // sesion vigente de los otros. Si cada providerKey cacheara su propio token, el
+        // ultimo login del arranque (o de cualquier refresh) dejaria "sin sesion valida"
+        // a los demas aunque su token cacheado no estuviera vencido segun nuestro TTL.
+        // Compartiendo la clave, todos los proveedores que usan la misma cuenta leen
+        // siempre la sesion vigente mas reciente.
+        String cacheKey = sharedSessionKey(providerKey, provider);
+        CachedProviderToken current = tokenCache.get(cacheKey);
         if (!forceRefresh && current != null && !current.isExpired(now)) {
             return current.token();
         }
 
         ProviderToken refreshedToken = requestNewToken(providerKey, provider, now);
-        tokenCache.put(providerKey, new CachedProviderToken(refreshedToken));
+        tokenCache.put(cacheKey, new CachedProviderToken(refreshedToken));
         return refreshedToken;
+    }
+
+    private String sharedSessionKey(String providerKey, AppProperties.ProviderProperties provider) {
+        AppProperties.ProviderTokenProperties auth = provider.getAuth();
+        AppProperties.ProviderLoginProperties login = auth != null ? auth.getLogin() : null;
+        if (login == null || login.getUsername() == null || login.getUsername().isBlank()) {
+            return providerKey;
+        }
+        String loginUrl = providerWsService.findUrl(providerKey, "LOGIN").orElse("");
+        return loginUrl + "|" + login.getUsername().trim().toUpperCase();
     }
 
     private ProviderToken requestNewToken(String providerKey, AppProperties.ProviderProperties provider, Instant now) {
