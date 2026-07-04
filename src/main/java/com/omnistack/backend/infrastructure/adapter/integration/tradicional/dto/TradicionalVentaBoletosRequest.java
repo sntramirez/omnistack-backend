@@ -13,7 +13,7 @@ import lombok.Value;
 public class TradicionalVentaBoletosRequest {
     String userName;
     String token;
-    Integer medioId;
+    String medioId;
     String reservaId;
     String cliente;
     BigDecimal totalVenta;

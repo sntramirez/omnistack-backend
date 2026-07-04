@@ -10,5 +10,5 @@ import lombok.Value;
 public class TradicionalJuegoQueryRequest {
     String userName;
     String token;
-    Integer medioId;
+    String medioId;
 }

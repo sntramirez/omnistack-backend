@@ -90,7 +90,7 @@ public class TradicionalWebClientAdapter implements
         TradicionalJuegoQueryRequest request = TradicionalJuegoQueryRequest.builder()
                 .userName(resolveUserName(provider))
                 .token(token)
-                .medioId(provider.getMedioId())
+                .medioId(String.valueOf(provider.getMedioId()))
                 .build();
 
         String body = invokePost(operationPath, provider, request, "queryJuegos", "consulta juegos Tradicionales",
@@ -123,7 +123,7 @@ public class TradicionalWebClientAdapter implements
         TradicionalSorteosQueryRequest request = TradicionalSorteosQueryRequest.builder()
                 .userName(resolveUserName(provider))
                 .token(token)
-                .medioId(provider.getMedioId())
+                .medioId(String.valueOf(provider.getMedioId()))
                 .juegoId(command.getJuegoId())
                 .build();
 
@@ -153,7 +153,7 @@ public class TradicionalWebClientAdapter implements
         TradicionalFigurasQueryRequest request = TradicionalFigurasQueryRequest.builder()
                 .userName(resolveUserName(provider))
                 .token(token)
-                .medioId(provider.getMedioId())
+                .medioId(String.valueOf(provider.getMedioId()))
                 .juegoId(command.getJuegoId())
                 .build();
 
@@ -183,7 +183,7 @@ public class TradicionalWebClientAdapter implements
         TradicionalNumerosQueryRequest request = TradicionalNumerosQueryRequest.builder()
                 .userName(resolveUserName(provider))
                 .token(token)
-                .medioId(provider.getMedioId())
+                .medioId(String.valueOf(provider.getMedioId()))
                 .juegoId(command.getJuegoId())
                 .sorteoId(command.getSorteoId())
                 .combinacion(command.getCombinacion())
@@ -220,7 +220,7 @@ public class TradicionalWebClientAdapter implements
         TradicionalVentaBoletosRequest request = TradicionalVentaBoletosRequest.builder()
                 .userName(resolveUserName(provider))
                 .token(token)
-                .medioId(provider.getMedioId())
+                .medioId(String.valueOf(provider.getMedioId()))
                 .reservaId(command.getReservaId())
                 .cliente(command.getCliente())
                 .totalVenta(command.getTotalVenta())
@@ -310,7 +310,7 @@ public class TradicionalWebClientAdapter implements
         TradicionalAnularVentaRequest request = TradicionalAnularVentaRequest.builder()
                 .userName(resolveUserName(provider))
                 .token(token)
-                .medioId(provider.getMedioId())
+                .medioId(String.valueOf(provider.getMedioId()))
                 .clienteId(command.getClienteId())
                 .ordenCompra(command.getOrdenCompra())
                 .motivo(command.getMotivo())

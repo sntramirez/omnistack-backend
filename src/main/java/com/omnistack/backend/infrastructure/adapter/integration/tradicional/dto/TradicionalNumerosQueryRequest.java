@@ -10,7 +10,7 @@ import lombok.Value;
 public class TradicionalNumerosQueryRequest {
     String userName;
     String token;
-    Integer medioId;
+    String medioId;
     String juegoId;
     String sorteoId;
     String combinacion;

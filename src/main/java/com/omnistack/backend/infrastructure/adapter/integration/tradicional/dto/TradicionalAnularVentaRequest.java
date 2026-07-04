@@ -10,7 +10,7 @@ import lombok.Value;
 public class TradicionalAnularVentaRequest {
     String userName;
     String token;
-    Integer medioId;
+    String medioId;
     String clienteId;
     String ordenCompra;
     String motivo;
