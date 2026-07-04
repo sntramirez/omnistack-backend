@@ -134,10 +134,7 @@ public class EcuabetWithdrawReverseWebClientAdapter implements EcuabetWithdrawRe
             EcuabetWithdrawCommand command,
             AppProperties.ProviderProperties provider) {
         validateProviderConfiguration(provider);
-        String providerToken = providerTokenResolverUseCase.getToken(
-                command.getCategoryCode(),
-                command.getSubcategoryCode(),
-                provider.getServiceProviderCode());
+        String providerToken = providerTokenResolverUseCase.getToken(PROVIDER_KEY);
 
         return EcuabetWithdrawReverseRequest.builder()
                 .shop(provider.getShopId())

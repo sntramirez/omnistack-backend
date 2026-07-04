@@ -93,7 +93,7 @@ public class Pega3WebClientAdapter implements
     @Override
     public ExternalTransactionResponse queryProduct(Pega3ProductQueryCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
         String productoVender = resolveProductoVender(provider);
 
         Pega3ProductQueryRequest request = Pega3ProductQueryRequest.builder()
@@ -149,7 +149,7 @@ public class Pega3WebClientAdapter implements
     @Override
     public ExternalTransactionResponse queryActiveDraw(Pega3DrawQueryCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
         String productoVender = resolveProductoVender(provider);
 
         Pega3DrawQueryRequest request = Pega3DrawQueryRequest.builder()
@@ -178,7 +178,7 @@ public class Pega3WebClientAdapter implements
     @Override
     public ExternalTransactionResponse createTicket(Pega3CreateTicketCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
         String productoVender = resolveProductoVender(provider);
         String deviceId = requiredValue(provider.getAuth().getLogin().getUsername(), "auth.login.username");
         String channel = resolveChannel(provider);
@@ -219,7 +219,7 @@ public class Pega3WebClientAdapter implements
     @Override
     public ExternalTransactionResponse payTicket(Pega3PayTicketCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
         String productoVender = resolveProductoVender(provider);
         String deviceId = requiredValue(provider.getAuth().getLogin().getUsername(), "auth.login.username");
 
@@ -254,7 +254,7 @@ public class Pega3WebClientAdapter implements
     @Override
     public ExternalTransactionResponse verifyTicket(Pega3VerifyTicketCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
         String productoVender = resolveProductoVender(provider);
 
         Pega3VerifyTicketRequest request = Pega3VerifyTicketRequest.builder()
@@ -377,7 +377,7 @@ public class Pega3WebClientAdapter implements
     @Override
     public ExternalTransactionResponse cancelTicket(Pega3CancelTicketCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
         String productoVender = resolveProductoVender(provider);
         String deviceId = requiredValue(provider.getAuth().getLogin().getUsername(), "auth.login.username");
 
@@ -542,8 +542,8 @@ public class Pega3WebClientAdapter implements
         return provider;
     }
 
-    private String resolveToken(String categoryCode, String subcategoryCode, AppProperties.ProviderProperties provider) {
-        return providerTokenResolverUseCase.getToken(categoryCode, subcategoryCode, provider.getServiceProviderCode());
+    private String resolveToken() {
+        return providerTokenResolverUseCase.getToken(PROVIDER_KEY);
     }
 
     private String resolveProductoVender(AppProperties.ProviderProperties provider) {

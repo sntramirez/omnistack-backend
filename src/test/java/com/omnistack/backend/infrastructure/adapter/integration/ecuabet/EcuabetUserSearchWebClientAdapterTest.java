@@ -1,5 +1,7 @@
 package com.omnistack.backend.infrastructure.adapter.integration.ecuabet;
 
+import com.omnistack.backend.application.port.in.ProviderTokenResolverUseCase;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -67,7 +69,10 @@ class EcuabetUserSearchWebClientAdapterTest {
                 WebClient.builder().build(),
                 providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test", Mockito.mock(WsExtLogService.class));
+                new ProviderTokenResolverUseCase() {
+                    public String getToken(String categoryCode, String subcategoryCode, String serviceProviderCode) { return "token-test"; }
+                    public String getToken(String providerKey) { return "token-test"; }
+                }, Mockito.mock(WsExtLogService.class));
 
         var response = adapter.searchUser(EcuabetUserSearchCommand.builder()
                 .chain("1")
@@ -110,7 +115,10 @@ class EcuabetUserSearchWebClientAdapterTest {
                 WebClient.builder().build(),
                 providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test", Mockito.mock(WsExtLogService.class));
+                new ProviderTokenResolverUseCase() {
+                    public String getToken(String categoryCode, String subcategoryCode, String serviceProviderCode) { return "token-test"; }
+                    public String getToken(String providerKey) { return "token-test"; }
+                }, Mockito.mock(WsExtLogService.class));
 
         var response = adapter.searchUser(EcuabetUserSearchCommand.builder()
                 .chain("60")
@@ -149,7 +157,10 @@ class EcuabetUserSearchWebClientAdapterTest {
                 WebClient.builder().build(),
                 providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test", Mockito.mock(WsExtLogService.class));
+                new ProviderTokenResolverUseCase() {
+                    public String getToken(String categoryCode, String subcategoryCode, String serviceProviderCode) { return "token-test"; }
+                    public String getToken(String providerKey) { return "token-test"; }
+                }, Mockito.mock(WsExtLogService.class));
 
         var response = adapter.searchUser(EcuabetUserSearchCommand.builder()
                 .chain("60")
@@ -186,7 +197,10 @@ class EcuabetUserSearchWebClientAdapterTest {
                 WebClient.builder().build(),
                 providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test", Mockito.mock(WsExtLogService.class));
+                new ProviderTokenResolverUseCase() {
+                    public String getToken(String categoryCode, String subcategoryCode, String serviceProviderCode) { return "token-test"; }
+                    public String getToken(String providerKey) { return "token-test"; }
+                }, Mockito.mock(WsExtLogService.class));
 
         var response = adapter.searchUser(EcuabetUserSearchCommand.builder()
                 .chain("60")
@@ -226,7 +240,10 @@ class EcuabetUserSearchWebClientAdapterTest {
                 timeoutWebClient,
                 providerConfigService(),
                 new ObjectMapper(),
-                (categoryCode, subcategoryCode, serviceProviderCode) -> "token-test",
+                new ProviderTokenResolverUseCase() {
+                    public String getToken(String categoryCode, String subcategoryCode, String serviceProviderCode) { return "token-test"; }
+                    public String getToken(String providerKey) { return "token-test"; }
+                },
                 Mockito.mock(WsExtLogService.class));
 
         IntegrationException exception = assertThrows(IntegrationException.class, () -> adapter.searchUser(

@@ -134,10 +134,7 @@ public class EcuabetDepositReverseWebClientAdapter implements EcuabetDepositReve
             EcuabetDepositCommand command,
             AppProperties.ProviderProperties provider) {
         validateProviderConfiguration(provider);
-        String providerToken = providerTokenResolverUseCase.getToken(
-                command.getCategoryCode(),
-                command.getSubcategoryCode(),
-                provider.getServiceProviderCode());
+        String providerToken = providerTokenResolverUseCase.getToken(PROVIDER_KEY);
 
         return EcuabetDepositReverseRequest.builder()
                 .shop(provider.getShopId())

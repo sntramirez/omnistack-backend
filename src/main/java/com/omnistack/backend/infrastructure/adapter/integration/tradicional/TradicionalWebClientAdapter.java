@@ -84,7 +84,7 @@ public class TradicionalWebClientAdapter implements
     @Override
     public ExternalTransactionResponse queryJuegos(TradicionalJuegoQueryCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
 
         TradicionalJuegoQueryRequest request = TradicionalJuegoQueryRequest.builder()
                 .userName(resolveUserName(provider))
@@ -114,7 +114,7 @@ public class TradicionalWebClientAdapter implements
     @Override
     public ExternalTransactionResponse querySorteos(TradicionalSorteosQueryCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
 
         TradicionalSorteosQueryRequest request = TradicionalSorteosQueryRequest.builder()
                 .userName(resolveUserName(provider))
@@ -144,7 +144,7 @@ public class TradicionalWebClientAdapter implements
     @Override
     public ExternalTransactionResponse queryFiguras(TradicionalFigurasQueryCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
 
         TradicionalFigurasQueryRequest request = TradicionalFigurasQueryRequest.builder()
                 .userName(resolveUserName(provider))
@@ -174,7 +174,7 @@ public class TradicionalWebClientAdapter implements
     @Override
     public ExternalTransactionResponse queryNumeros(TradicionalNumerosQueryCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
 
         TradicionalNumerosQueryRequest request = TradicionalNumerosQueryRequest.builder()
                 .userName(resolveUserName(provider))
@@ -211,7 +211,7 @@ public class TradicionalWebClientAdapter implements
     @Override
     public ExternalTransactionResponse ventaBoletos(TradicionalVentaBoletosCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
 
         TradicionalVentaBoletosRequest request = TradicionalVentaBoletosRequest.builder()
                 .userName(resolveUserName(provider))
@@ -301,7 +301,7 @@ public class TradicionalWebClientAdapter implements
     @Override
     public ExternalTransactionResponse anularVenta(TradicionalAnularVentaCommand command, String operationPath) {
         AppProperties.ProviderProperties provider = getProviderProperties();
-        String token = resolveToken(command.getCategoryCode(), command.getSubcategoryCode(), provider);
+        String token = resolveToken();
 
         TradicionalAnularVentaRequest request = TradicionalAnularVentaRequest.builder()
                 .userName(resolveUserName(provider))
@@ -506,8 +506,8 @@ public class TradicionalWebClientAdapter implements
         return provider;
     }
 
-    private String resolveToken(String categoryCode, String subcategoryCode, AppProperties.ProviderProperties provider) {
-        return providerTokenResolverUseCase.getToken(categoryCode, subcategoryCode, provider.getServiceProviderCode());
+    private String resolveToken() {
+        return providerTokenResolverUseCase.getToken(PROVIDER_KEY);
     }
 
     private String resolveUserName(AppProperties.ProviderProperties provider) {

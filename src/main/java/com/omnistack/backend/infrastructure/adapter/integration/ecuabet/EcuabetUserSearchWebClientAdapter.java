@@ -131,10 +131,7 @@ public class EcuabetUserSearchWebClientAdapter implements EcuabetUserSearchPort 
     private EcuabetUserSearchRequest buildExternalRequest(
             EcuabetUserSearchCommand command,
             AppProperties.ProviderProperties provider) {
-        String providerToken = providerTokenResolverUseCase.getToken(
-                command.getCategoryCode(),
-                command.getSubcategoryCode(),
-                provider.getServiceProviderCode());
+        String providerToken = providerTokenResolverUseCase.getToken(PROVIDER_KEY);
         if (command.getMovementType() == MovementType.CASH_OUT) {
             return EcuabetUserSearchRequest.builder()
                     .shop(provider.getShopId())
