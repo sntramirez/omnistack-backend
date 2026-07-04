@@ -237,16 +237,7 @@ public class TradicionalWebClientAdapter implements
                                                 .total(command.getTotalVenta())
                                                 .build()))
                                 .build()))
-                .listaJuegos(List.of(
-                        TradicionalVentaBoletosRequest.JuegoEntry.builder()
-                                .juegoId(command.getJuegoId())
-                                .listaSorteos(List.of(
-                                        TradicionalVentaBoletosRequest.SorteoEntry.builder()
-                                                .sorteoId(command.getSorteoId())
-                                                .numero(command.getNumero())
-                                                .cantidadBoletos(command.getCantidadBoletos())
-                                                .build()))
-                                .build()))
+                .listaJuegos(buildListaJuegos(command.getBoletos()))
                 .build();
 
         TradicionalVentaBoletosResponse response = invokePost(
@@ -262,12 +253,53 @@ public class TradicionalWebClientAdapter implements
         payload.put("fechaVenta", response.getFechaVenta());
         payload.put("transaccion", response.getTransaccion());
 
+        TradicionalVentaBoletosResponse.TicketDetalle primerTicket = firstTicketDetalle(response);
+        if (primerTicket != null) {
+            payload.put("boletoClave", primerTicket.getClave());
+            payload.put("boletoQr", primerTicket.getCodigoQR());
+        }
+
         return ExternalTransactionResponse.builder()
                 .approved(!isError)
                 .externalCode(String.valueOf(response.getCodError()))
                 .externalMessage(response.getMsgError() != null ? response.getMsgError() : "")
                 .payload(payload)
                 .build();
+    }
+
+    private List<TradicionalVentaBoletosRequest.JuegoEntry> buildListaJuegos(
+            List<TradicionalVentaBoletosCommand.BoletoEntry> boletos) {
+        Map<String, List<TradicionalVentaBoletosRequest.SorteoEntry>> sorteosPorJuego = new LinkedHashMap<>();
+        for (TradicionalVentaBoletosCommand.BoletoEntry boleto : boletos) {
+            sorteosPorJuego
+                    .computeIfAbsent(boleto.getJuegoId(), key -> new java.util.ArrayList<>())
+                    .add(TradicionalVentaBoletosRequest.SorteoEntry.builder()
+                            .sorteoId(boleto.getSorteoId())
+                            .numero(boleto.getNumero())
+                            .cantidadBoletos(boleto.getCantidadBoletos())
+                            .build());
+        }
+        return sorteosPorJuego.entrySet().stream()
+                .map(entry -> TradicionalVentaBoletosRequest.JuegoEntry.builder()
+                        .juegoId(entry.getKey())
+                        .listaSorteos(entry.getValue())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private TradicionalVentaBoletosResponse.TicketDetalle firstTicketDetalle(TradicionalVentaBoletosResponse response) {
+        if (response.getListaSUE() == null || response.getListaSUE().isEmpty()) {
+            return null;
+        }
+        TradicionalVentaBoletosResponse.Sue sue = response.getListaSUE().get(0);
+        if (sue.getListaSorteos() == null || sue.getListaSorteos().isEmpty()) {
+            return null;
+        }
+        TradicionalVentaBoletosResponse.SorteoDetalle sorteoDetalle = sue.getListaSorteos().get(0);
+        if (sorteoDetalle.getListaR() == null || sorteoDetalle.getListaR().isEmpty()) {
+            return null;
+        }
+        return sorteoDetalle.getListaR().get(0);
     }
 
     @Override
