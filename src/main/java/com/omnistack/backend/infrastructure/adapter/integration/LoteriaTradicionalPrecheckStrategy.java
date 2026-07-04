@@ -144,11 +144,11 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
             Object rawJuegos = juegosResp.getPayload().get("juegos");
             if (rawJuegos instanceof List<?> list) {
                 games = list.stream()
-                        .filter(j -> j instanceof TradicionalJuegoQueryResponse)
+                        .filter(j -> j instanceof TradicionalJuegoQueryResponse.Juego)
                         .map(j -> {
-                            TradicionalJuegoQueryResponse jg = (TradicionalJuegoQueryResponse) j;
+                            TradicionalJuegoQueryResponse.Juego jg = (TradicionalJuegoQueryResponse.Juego) j;
                             return PrecheckResponse.TradicionalGame.builder()
-                                    .gameId(jg.getJuegoId()).nombre(jg.getNombre()).descripcion(jg.getDescripcion())
+                                    .gameId(jg.getJuegoId()).nombre(jg.getNombreJuego())
                                     .build();
                         }).collect(java.util.stream.Collectors.toList());
             }

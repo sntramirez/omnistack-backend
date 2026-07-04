@@ -1,7 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration.tradicional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.omnistack.backend.application.port.in.ProviderTokenResolverUseCase;
 import com.omnistack.backend.application.port.out.TradicionalAnularVentaPort;
@@ -93,24 +92,21 @@ public class TradicionalWebClientAdapter implements
                 .medioId(String.valueOf(provider.getMedioId()))
                 .build();
 
-        String body = invokePost(operationPath, provider, request, "queryJuegos", "consulta juegos Tradicionales",
-                command.getUuid(), WS_KEY_PRECHECK);
-
-        List<TradicionalJuegoQueryResponse> juegos;
-        try {
-            juegos = objectMapper.readValue(body, new TypeReference<List<TradicionalJuegoQueryResponse>>() {});
-        } catch (JsonProcessingException e) {
-            throw new IntegrationException("Tradicionales queryJuegos retorno un body no parseable");
-        }
+        TradicionalJuegoQueryResponse response = invokePost(
+                operationPath, provider, request, TradicionalJuegoQueryResponse.class,
+                "queryJuegos", "consulta juegos Tradicionales", command.getUuid(), WS_KEY_PRECHECK);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        boolean isError = juegos == null || juegos.isEmpty();
-        payload.put("juegos", juegos != null ? juegos : Collections.emptyList());
+        boolean isError = !isSuccess(response.getCodError())
+                || response.getListaDetalle() == null || response.getListaDetalle().isEmpty();
+        payload.put("juegos", response.getListaDetalle() != null ? response.getListaDetalle() : Collections.emptyList());
+        payload.put("codError", response.getCodError());
+        payload.put("msgError", response.getMsgError());
 
         return ExternalTransactionResponse.builder()
                 .approved(!isError)
-                .externalCode(isError ? "ERROR" : "0")
-                .externalMessage(isError ? "No se obtuvieron juegos disponibles" : "")
+                .externalCode(String.valueOf(response.getCodError()))
+                .externalMessage(response.getMsgError() != null ? response.getMsgError() : "")
                 .payload(payload)
                 .build();
     }
