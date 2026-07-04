@@ -187,35 +187,30 @@ public class ProviderTokenService implements ProviderTokenResolverUseCase, Provi
 
     private synchronized ProviderToken getDynamicToken(String providerKey, AppProperties.ProviderProperties provider, boolean forceRefresh) {
         Instant now = clock.instant();
-        // Cache por sesion compartida (login URL + usuario), no por providerKey ni por
-        // categoria/subcategoria/codigo de proveedor. Loteria Nacional mantiene UNA sola
-        // sesion activa por usuario de su lado, sin importar el "productoVender" con el
-        // que se hizo login (tradicional/loteria/pega3 comparten el mismo usuario y
-        // password en IN_OMNI_PROVEEDOR_CONFIG): loguearse para un producto invalida la
-        // sesion vigente de los otros. Si cada providerKey cacheara su propio token, el
-        // ultimo login del arranque (o de cualquier refresh) dejaria "sin sesion valida"
-        // a los demas aunque su token cacheado no estuviera vencido segun nuestro TTL.
-        // Compartiendo la clave, todos los proveedores que usan la misma cuenta leen
-        // siempre la sesion vigente mas reciente.
-        String cacheKey = sharedSessionKey(providerKey, provider);
-        CachedProviderToken current = tokenCache.get(cacheKey);
+        // Cache por providerKey (no por categoria/subcategoria/codigo de proveedor: dos
+        // proveedores distintos, ej. tradicional y pega3, pueden compartir esos 3 valores
+        // cuando ninguno tiene subcategoryCode propio configurado).
+        //
+        // OJO: se probo cachear por "sesion compartida" (loginUrl+usuario) asumiendo que
+        // Loteria Nacional acepta cualquier token vigente de la cuenta sin importar el
+        // productoVender usado al loguear (tradicional/loteria/pega3 comparten cuenta).
+        // La evidencia real lo contradice: un token obtenido con productoVender=Pega3 fue
+        // rechazado por un endpoint de Tradicionales aun siendo la sesion mas reciente de
+        // esa cuenta ("Usuario sin token de sesion valido"). Es decir, el token SI esta
+        // atado a su propio producto — lo que SI parece cierto es que loguearse para un
+        // producto invalida la sesion vigente de los otros del lado del proveedor. Por eso
+        // el cache debe seguir siendo por providerKey (cada producto con su propio token),
+        // y la mitigacion real es reintentar con refresh forzado cuando el proveedor
+        // rechaza el token (ver TradicionalWebClientAdapter, patron ya usado en
+        // Bet593WithdrawWebClientAdapter.isInvalidTokenResponse).
+        CachedProviderToken current = tokenCache.get(providerKey);
         if (!forceRefresh && current != null && !current.isExpired(now)) {
             return current.token();
         }
 
         ProviderToken refreshedToken = requestNewToken(providerKey, provider, now);
-        tokenCache.put(cacheKey, new CachedProviderToken(refreshedToken));
+        tokenCache.put(providerKey, new CachedProviderToken(refreshedToken));
         return refreshedToken;
-    }
-
-    private String sharedSessionKey(String providerKey, AppProperties.ProviderProperties provider) {
-        AppProperties.ProviderTokenProperties auth = provider.getAuth();
-        AppProperties.ProviderLoginProperties login = auth != null ? auth.getLogin() : null;
-        if (login == null || login.getUsername() == null || login.getUsername().isBlank()) {
-            return providerKey;
-        }
-        String loginUrl = providerWsService.findUrl(providerKey, "LOGIN").orElse("");
-        return loginUrl + "|" + login.getUsername().trim().toUpperCase();
     }
 
     private ProviderToken requestNewToken(String providerKey, AppProperties.ProviderProperties provider, Instant now) {

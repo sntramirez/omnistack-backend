@@ -96,6 +96,14 @@ public class TradicionalWebClientAdapter implements
                 operationPath, provider, request, TradicionalJuegoQueryResponse.class,
                 "queryJuegos", "consulta juegos Tradicionales", command.getUuid(), WS_KEY_PRECHECK);
 
+        if (isInvalidTokenMessage(response.getMsgError())) {
+            String freshToken = providerTokenResolverUseCase.refreshToken(PROVIDER_KEY);
+            TradicionalJuegoQueryRequest retryRequest = request.toBuilder().token(freshToken).build();
+            response = invokePost(
+                    operationPath, provider, retryRequest, TradicionalJuegoQueryResponse.class,
+                    "queryJuegos retry", "consulta juegos Tradicionales", command.getUuid(), WS_KEY_PRECHECK);
+        }
+
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !isSuccess(response.getCodError())
                 || response.getListaDetalle() == null || response.getListaDetalle().isEmpty();
@@ -127,6 +135,14 @@ public class TradicionalWebClientAdapter implements
                 operationPath, provider, request, TradicionalSorteosQueryResponse.class,
                 "querySorteos", "consulta sorteos Tradicionales", command.getUuid(), WS_KEY_PRECHECK_SORTEOS);
 
+        if (isInvalidTokenMessage(response.getMsgError())) {
+            String freshToken = providerTokenResolverUseCase.refreshToken(PROVIDER_KEY);
+            TradicionalSorteosQueryRequest retryRequest = request.toBuilder().token(freshToken).build();
+            response = invokePost(
+                    operationPath, provider, retryRequest, TradicionalSorteosQueryResponse.class,
+                    "querySorteos retry", "consulta sorteos Tradicionales", command.getUuid(), WS_KEY_PRECHECK_SORTEOS);
+        }
+
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !isSuccess(response.getCodError());
         payload.put("listaSorteos", response.getListaSorteos());
@@ -156,6 +172,14 @@ public class TradicionalWebClientAdapter implements
         TradicionalFigurasQueryResponse response = invokePost(
                 operationPath, provider, request, TradicionalFigurasQueryResponse.class,
                 "queryFiguras", "consulta figuras Tradicionales", command.getUuid(), WS_KEY_PRECHECK_FIGURAS);
+
+        if (isInvalidTokenMessage(response.getMsgError())) {
+            String freshToken = providerTokenResolverUseCase.refreshToken(PROVIDER_KEY);
+            TradicionalFigurasQueryRequest retryRequest = request.toBuilder().token(freshToken).build();
+            response = invokePost(
+                    operationPath, provider, retryRequest, TradicionalFigurasQueryResponse.class,
+                    "queryFiguras retry", "consulta figuras Tradicionales", command.getUuid(), WS_KEY_PRECHECK_FIGURAS);
+        }
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !isSuccess(response.getCodError());
@@ -192,6 +216,14 @@ public class TradicionalWebClientAdapter implements
         TradicionalNumerosQueryResponse response = invokePost(
                 operationPath, provider, request, TradicionalNumerosQueryResponse.class,
                 "queryNumeros", "consulta numeros Tradicionales", command.getUuid(), WS_KEY_PRECHECK_NUMEROS);
+
+        if (isInvalidTokenMessage(response.getMsgError())) {
+            String freshToken = providerTokenResolverUseCase.refreshToken(PROVIDER_KEY);
+            TradicionalNumerosQueryRequest retryRequest = request.toBuilder().token(freshToken).build();
+            response = invokePost(
+                    operationPath, provider, retryRequest, TradicionalNumerosQueryResponse.class,
+                    "queryNumeros retry", "consulta numeros Tradicionales", command.getUuid(), WS_KEY_PRECHECK_NUMEROS);
+        }
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !isSuccess(response.getCodError());
@@ -239,6 +271,14 @@ public class TradicionalWebClientAdapter implements
         TradicionalVentaBoletosResponse response = invokePost(
                 operationPath, provider, request, TradicionalVentaBoletosResponse.class,
                 "ventaBoletos", "venta boletos Tradicionales", command.getUuid(), WS_KEY_EXECUTE);
+
+        if (isInvalidTokenMessage(response.getMsgError())) {
+            String freshToken = providerTokenResolverUseCase.refreshToken(PROVIDER_KEY);
+            TradicionalVentaBoletosRequest retryRequest = request.toBuilder().token(freshToken).build();
+            response = invokePost(
+                    operationPath, provider, retryRequest, TradicionalVentaBoletosResponse.class,
+                    "ventaBoletos retry", "venta boletos Tradicionales", command.getUuid(), WS_KEY_EXECUTE);
+        }
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !response.isSuccess();
@@ -315,6 +355,14 @@ public class TradicionalWebClientAdapter implements
         TradicionalAnularVentaResponse response = invokePost(
                 operationPath, provider, request, TradicionalAnularVentaResponse.class,
                 "anularVenta", "anulacion venta Tradicionales", command.getUuid(), WS_KEY_REVERSE);
+
+        if (isInvalidTokenMessage(response.getMsgError())) {
+            String freshToken = providerTokenResolverUseCase.refreshToken(PROVIDER_KEY);
+            TradicionalAnularVentaRequest retryRequest = request.toBuilder().token(freshToken).build();
+            response = invokePost(
+                    operationPath, provider, retryRequest, TradicionalAnularVentaResponse.class,
+                    "anularVenta retry", "anulacion venta Tradicionales", command.getUuid(), WS_KEY_REVERSE);
+        }
 
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = !response.isSuccess();
@@ -521,6 +569,28 @@ public class TradicionalWebClientAdapter implements
 
     private boolean isSuccess(Object codError) {
         return codError != null && "0".equals(String.valueOf(codError));
+    }
+
+    /**
+     * Loteria Nacional mantiene una sola sesion activa por usuario: loguearse para
+     * Bet593 o Pega3 con la misma cuenta invalida la sesion de Tradicionales aunque
+     * nuestro token cacheado no haya vencido segun el TTL local. Ante ese rechazo,
+     * forzamos un refresh y reintentamos una vez (mismo patron que
+     * Bet593WithdrawWebClientAdapter.isInvalidTokenResponse).
+     */
+    private boolean isInvalidTokenMessage(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String message = value.toLowerCase(java.util.Locale.ROOT);
+        return message.contains("token")
+                && (message.contains("invalid")
+                || message.contains("inval")
+                || message.contains("expir")
+                || message.contains("venc")
+                || message.contains("caduc")
+                || message.contains("autoriz")
+                || message.contains("sesion"));
     }
 
 
