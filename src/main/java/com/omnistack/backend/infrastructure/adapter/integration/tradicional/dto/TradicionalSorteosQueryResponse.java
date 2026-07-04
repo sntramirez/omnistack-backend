@@ -13,6 +13,7 @@ import lombok.Setter;
 public class TradicionalSorteosQueryResponse {
     private Object codError;
     private String msgError;
+    @JsonProperty("listaDetalle")
     private List<Sorteo> listaSorteos;
 
     @Getter

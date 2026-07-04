@@ -14,6 +14,8 @@ public class TradicionalNumerosQueryResponse {
     private Object codError;
     private String msgError;
     private Integer totalResults;
+
+    @JsonProperty("listaDetalle")
     private List<Numero> listaNumeros;
 
     @Getter
