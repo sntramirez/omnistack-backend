@@ -20,6 +20,16 @@ public class AppProperties {
     private BusinessLines businessLines = new BusinessLines();
     private Integrations integrations = new Integrations();
     private Datasource datasource = new Datasource();
+    private Comprobantes comprobantes = new Comprobantes();
+
+    /**
+     * Propiedades de almacenamiento y publicacion de comprobantes de venta (PDF).
+     */
+    @Data
+    public static class Comprobantes {
+        private String storagePath = "./data/comprobantes";
+        private String publicBaseUrl = "http://localhost:8086";
+    }
 
     /**
      * Propiedades de metadata Swagger.

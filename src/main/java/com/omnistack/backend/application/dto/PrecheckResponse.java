@@ -124,6 +124,10 @@ public class PrecheckResponse extends BaseTransactionResponse {
         @JsonProperty("play_types")
         @Schema(example = "[\"Straight\", \"Box\"]")
         private List<String> playTypes;
+
+        @JsonProperty("prize_liability_threshold")
+        @Schema(example = "5000.00", description = "Monto de premio a partir del cual el proveedor exige control de riesgo antes de continuar (RN-07)")
+        private BigDecimal prizeLiabilityThreshold;
     }
 
     /**

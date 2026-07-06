@@ -18,6 +18,8 @@ import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrat
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
+import com.omnistack.backend.application.service.ComprobanteUrlService;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.service.ProviderConfigService;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.service.ProviderWsDefsService;
@@ -52,6 +54,7 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
     private static final String PROVIDER_NAME = "Loteria Tradicionales";
 
     private final TradicionalVerifyPort verifyPort;
+    private final ComprobanteUrlService comprobanteUrlService;
     private final ProviderConfigService providerConfigService;
     private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
@@ -108,7 +111,7 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
                 .serviceProviderCode(request.getServiceProviderCode()).rmsItemCode(request.getRmsItemCode())
                 .errorFlag(isError)
                 .authorization(request.getAuthorization())
-                .comprobanteB64(stringValue(payload, "comprobante_b64"));
+                .comprobanteUrl(comprobanteUrlService.storeAndBuildUrl(stringValue(payload, "comprobante_b64")));
 
         if (isError) {
             builder.error(ErrorDetail.builder()

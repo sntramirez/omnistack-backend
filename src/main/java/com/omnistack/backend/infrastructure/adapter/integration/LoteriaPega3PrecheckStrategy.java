@@ -90,6 +90,7 @@ public class LoteriaPega3PrecheckStrategy extends AbstractProviderStrategy imple
                     .futureDrawsLimit(getIntegerValue(productPayload, "future_draws_limit"))
                     .advanceDrawLimit(getIntegerValue(productPayload, "advance_draw_limit"))
                     .playTypes(getStringList(productPayload, "play_types"))
+                    .prizeLiabilityThreshold(getBigDecimalValue(productPayload, "prize_liability_threshold"))
                     .build();
         }
 

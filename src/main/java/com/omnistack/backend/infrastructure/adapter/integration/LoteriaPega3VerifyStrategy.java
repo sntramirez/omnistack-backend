@@ -22,6 +22,8 @@ import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrat
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
+import com.omnistack.backend.application.service.ComprobanteUrlService;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.service.ProviderConfigService;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.service.ProviderWsDefsService;
@@ -60,6 +62,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
 
     private final Pega3VerifyTicketPort pega3VerifyTicketPort;
     private final Pega3ComprobanteQueryPort pega3ComprobanteQueryPort;
+    private final ComprobanteUrlService comprobanteUrlService;
     private final ProviderConfigService providerConfigService;
     private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
@@ -173,7 +176,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
                 .ticketStatus(stringValue(payload, "ticket_status"))
                 .winner(getBooleanValue(payload, "is_winner"))
                 .prizeAmount(decimalValue(payload, "prize_amount"))
-                .comprobanteB64(comprobanteB64);
+                .comprobanteUrl(comprobanteUrlService.storeAndBuildUrl(comprobanteB64));
 
         if (isError) {
             builder.error(ErrorDetail.builder()

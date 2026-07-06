@@ -26,6 +26,9 @@ public class Pega3ProductQueryResponse {
     private Integer retailerCancelPeriod;
     private String message;
 
+    /** Monto inicial del premio a partir del cual el proveedor exige control de riesgo (RN-07). */
+    private BigDecimal prizeLiabilityThreshold;
+
     @Getter
     @Setter
     @JsonIgnoreProperties(ignoreUnknown = true)

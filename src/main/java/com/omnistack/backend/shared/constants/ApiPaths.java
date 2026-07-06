@@ -49,6 +49,10 @@ public final class ApiPaths {
      * Endpoint de recarga manual de caches de configuracion.
      */
     public static final String V1_CACHE_RELOAD = "/v1/cache/reload";
+    /**
+     * Endpoint de descarga de comprobantes de venta (PDF).
+     */
+    public static final String V1_COMPROBANTES = "/v1/comprobantes";
 
     private ApiPaths() {
     }

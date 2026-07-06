@@ -24,6 +24,7 @@ import com.omnistack.backend.domain.model.TradicionalVentaBoletosCommand;
 import com.omnistack.backend.domain.model.TradicionalVerifyCommand;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalAnularVentaRequest;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalAnularVentaResponse;
+import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalComprobanteResponse;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalFigurasQueryRequest;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalFigurasQueryResponse;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalJuegoQueryRequest;
@@ -36,7 +37,6 @@ import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalVentaBoletosResponse;
 import com.omnistack.backend.shared.exception.IntegrationException;
 import com.omnistack.backend.shared.util.JsonUtil;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -389,9 +389,9 @@ public class TradicionalWebClientAdapter implements
         log.info("Tradicionales generateComprobante GET url={}", fullUrl);
         long startMs = System.currentTimeMillis();
 
-        byte[] bytes;
+        TradicionalComprobanteResponse response;
         try {
-            bytes = omnistackWebClient.get()
+            response = omnistackWebClient.get()
                     .uri(fullUrl)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
@@ -412,7 +412,7 @@ public class TradicionalWebClientAdapter implements
                                         .build());
                                 return Mono.error(new IntegrationException(errMsg));
                             }))
-                    .bodyToMono(byte[].class)
+                    .bodyToMono(TradicionalComprobanteResponse.class)
                     .block();
         } catch (WebClientRequestException exception) {
             String errMsg = "Error de conexion al invocar GenerarComprobanteVenta: " + rootCauseMessage(exception);
@@ -431,20 +431,21 @@ public class TradicionalWebClientAdapter implements
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        boolean isError = bytes == null || bytes.length == 0;
+        boolean isError = response == null || response.getBase64() == null || response.getBase64().isBlank();
         wsExtLogService.log(ProviderCallLog.builder()
                 .uuid(command.getUuid())
                 .providerKey(PROVIDER_KEY)
                 .wsKey(WS_KEY_VERIFY)
                 .url(fullUrl)
                 .requestJson(null)
-                .responseJson(isError ? null : "[binary pdf " + (bytes != null ? bytes.length : 0) + " bytes]")
+                .responseJson(isError ? null : "[pdf " + response.getFileName() + "]")
                 .durationMs(System.currentTimeMillis() - startMs)
                 .isError(isError)
                 .errorMessage(isError ? "GenerarComprobanteVenta no retorno contenido" : null)
                 .build());
         if (!isError) {
-            payload.put("comprobante_b64", Base64.getEncoder().encodeToString(bytes));
+            payload.put("comprobante_b64", response.getBase64());
+            payload.put("file_name", response.getFileName());
         }
         payload.put("ventaId", command.getVentaId());
 

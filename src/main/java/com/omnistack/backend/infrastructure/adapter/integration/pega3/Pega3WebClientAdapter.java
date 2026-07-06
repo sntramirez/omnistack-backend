@@ -114,6 +114,7 @@ public class Pega3WebClientAdapter implements
         payload.put("bet_amount_options", parseBetAmountOptions(response.getBetAmountOptions()));
         payload.put("min_cost", response.getMinCost());
         payload.put("retailer_cancel_period", response.getRetailerCancelPeriod());
+        payload.put("prize_liability_threshold", response.getPrizeLiabilityThreshold());
 
         // Los limites (maxWager, futureDrawsLimit, advanceDrawLimit, playTypes) vienen anidados
         // por modalidad de entrada (entryTypes[]); se toma el primero como representativo, igual
