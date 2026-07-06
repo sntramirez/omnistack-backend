@@ -126,12 +126,14 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
             figurasResponse = figurasQueryPort.queryFiguras(figurasCmd, figurasUrl);
         }
 
-        return buildResponse(request, juegosResponse, sorteosResponse, figurasResponse);
+        return buildResponse(request, capability, serviceDefinition, juegosResponse, sorteosResponse, figurasResponse);
     }
 
     @SuppressWarnings("unchecked")
     private PrecheckResponse buildResponse(
             BaseTransactionRequest request,
+            Capability capability,
+            ServiceDefinition serviceDefinition,
             ExternalTransactionResponse juegosResp,
             ExternalTransactionResponse sorteosResp,
             ExternalTransactionResponse figurasResp) {
