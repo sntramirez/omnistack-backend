@@ -149,7 +149,9 @@ public class ClaroXmlAdapter implements ClaroPrecheckPort, ClaroExecutePort {
             throw new IntegrationException("CLARO retorno XML no parseable: " + e.getMessage(), e);
         }
 
-        String idCode = fields.getOrDefault("ID_CODE", "");
+        // Claro usa nombres distintos segun la operacion: "ID_CODIGO" en validateRechargeRetail
+        // (PRECHECK), "ID_CODE" en processRechargeRetail (EXECUTE). Se aceptan ambos.
+        String idCode = fields.getOrDefault("ID_CODE", fields.getOrDefault("ID_CODIGO", ""));
         String status = fields.getOrDefault("STATUS", "");
         String systemMessage = fields.getOrDefault("SYSTEMMESSAGE", "");
         String authorizationNumber = fields.getOrDefault("AUTHORIZATIONNUMBER", "");
