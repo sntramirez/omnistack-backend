@@ -138,19 +138,25 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
 
         boolean isError = !juegosResp.isApproved();
 
-        // Build games list
+        // Build games list — solo los juegos con integracion real en OmniStack (juego_id.*
+        // configurado en WS_DEFS), no el catalogo completo que devuelve el proveedor.
+        // Evita exponer juegos sin desarrollo (Ecuabingo, Bingazo, Cupon, La Millonaria,
+        // Facil Lotto) y evita exponer Pozo Revancha (17) como juego seleccionable por su
+        // cuenta — Revancha solo se vende empaquetada con Pozo Millonario (RN-05).
         List<PrecheckResponse.TradicionalGame> games = null;
         if (juegosResp.isApproved() && juegosResp.getPayload() != null) {
             Object rawJuegos = juegosResp.getPayload().get("juegos");
             if (rawJuegos instanceof List<?> list) {
+                java.util.Set<String> supportedGameIds = providerWsDefsService.getConfiguredGameIds(
+                        PROVIDER_KEY, toWsKey(capability.name(), serviceDefinition.getMovementType()));
                 games = list.stream()
                         .filter(j -> j instanceof TradicionalJuegoQueryResponse.Juego)
-                        .map(j -> {
-                            TradicionalJuegoQueryResponse.Juego jg = (TradicionalJuegoQueryResponse.Juego) j;
-                            return PrecheckResponse.TradicionalGame.builder()
-                                    .gameId(jg.getJuegoId()).nombre(jg.getNombreJuego())
-                                    .build();
-                        }).collect(java.util.stream.Collectors.toList());
+                        .map(j -> (TradicionalJuegoQueryResponse.Juego) j)
+                        .filter(jg -> supportedGameIds.contains(jg.getJuegoId()))
+                        .map(jg -> PrecheckResponse.TradicionalGame.builder()
+                                .gameId(jg.getJuegoId()).nombre(jg.getNombreJuego())
+                                .build())
+                        .collect(java.util.stream.Collectors.toList());
             }
         }
 
