@@ -93,9 +93,11 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
         Boolean sugerir = createTicketRequest.getSugerir();
         Integer registros = createTicketRequest.getRegistros();
         String figuraId = createTicketRequest.getFiguraId();
+        Integer cantidadFracciones = createTicketRequest.getCantidadFracciones() != null
+                ? createTicketRequest.getCantidadFracciones() : 0;
 
         ExternalTransactionResponse numerosResponse = queryNumeros(
-                request, provider, juegoId, drawId, combinacion, figuraId, sugerir, registros, numerosUrl);
+                request, provider, juegoId, drawId, combinacion, figuraId, sugerir, registros, cantidadFracciones, numerosUrl);
 
         ExternalTransactionResponse revanchaNumerosResponse = null;
         if (sorteosUrl != null && !sorteosUrl.isBlank()) {
@@ -104,7 +106,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
             if (revanchaInfo != null) {
                 revanchaNumerosResponse = queryNumeros(
                         request, provider, revanchaInfo.juegoRevanchaId(), revanchaInfo.sorteoRevanchaId(),
-                        combinacion, figuraId, sugerir, registros, numerosUrl);
+                        combinacion, figuraId, sugerir, registros, cantidadFracciones, numerosUrl);
             }
         }
 
@@ -128,7 +130,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
     private ExternalTransactionResponse queryNumeros(
             BaseTransactionRequest request, AppProperties.ProviderProperties provider,
             String juegoId, String sorteoId, String combinacion, String figuraId,
-            Boolean sugerir, Integer registros, String numerosUrl) {
+            Boolean sugerir, Integer registros, Integer cantidadFracciones, String numerosUrl) {
         TradicionalNumerosQueryCommand numerosCmd = TradicionalNumerosQueryCommand.builder()
                 .uuid(request.getUuid()).chain(request.getChain()).store(request.getStore())
                 .storeName(request.getStoreName()).pos(request.getPos())
@@ -140,7 +142,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 .combinacion(combinacion != null ? combinacion : "")
                 .combinacionFigura(figuraId != null ? figuraId : "")
                 .sugerir(sugerir != null ? sugerir : false)
-                .cantidad(0)
+                .cantidad(cantidadFracciones)
                 .registros(registros != null ? registros : 10)
                 .build();
         return numerosQueryPort.queryNumeros(numerosCmd, numerosUrl);

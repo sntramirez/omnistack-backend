@@ -3872,7 +3872,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100713842\",\n  \"draw_id\": \"7151\",\n  \"combinacion\": \"\",\n  \"sugerir\": false,\n  \"registros\": 4\n}",
+                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100713842\",\n  \"draw_id\": \"7151\",\n  \"combinacion\": \"\",\n  \"sugerir\": false,\n  \"registros\": 4,\n  \"cantidad_fracciones\": 1\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3903,7 +3903,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100713842\",\n  \"draw_id\": \"7151\",\n  \"combinacion\": \"\",\n  \"sugerir\": false,\n  \"registros\": 4\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100713842\",\n  \"draw_id\": \"7151\",\n  \"combinacion\": \"\",\n  \"sugerir\": false,\n  \"registros\": 4,\n  \"cantidad_fracciones\": 1\n}",
                       "options": {
                         "raw": {
                           "language": "json"
