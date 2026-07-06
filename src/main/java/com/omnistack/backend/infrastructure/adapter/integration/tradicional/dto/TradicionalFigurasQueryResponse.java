@@ -20,8 +20,13 @@ public class TradicionalFigurasQueryResponse {
     @Setter
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Figura {
+        @JsonProperty("codigoImagen")
         private String figuraId;
+
+        @JsonProperty("descripcionImagen")
         private String nombre;
+
+        @JsonProperty("abreviaturaImagen")
         private String descripcion;
     }
 }

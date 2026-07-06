@@ -29,6 +29,13 @@ For local dev without real providers, set `APP_INTEGRATIONS_MOCK_ENABLED=true` (
 
 In dev/QA, set `app.integrations.ssl-verification-disabled=true` to bypass the SSL handshake error from `www8.loteria.com.ec` (Java 17 TLS issue).
 
+### Docker
+
+```bash
+docker build -t omnistack-backend:local .
+docker run -d --name omnistack --env-file .env -p 8086:8086 omnistack-backend:local
+```
+
 ## Architecture
 
 Hexagonal / clean architecture with strict layer separation:
@@ -89,6 +96,11 @@ getProviderProperties(configService, "ecuabet", "ECUABET")  // throws if not con
 getRequiredOperationUrl(wsService, defsService, "ecuabet", capability, serviceDefinition, "ECUABET")
 validateValue(fieldName, currentValue, expectedValue, providerName)
 stringValue(payload, key) / resolveValue(payload, key, fallback) / integerValue / decimalValue
+
+// Resolve a per-item field from WS_DEFS, falling back to an explicit request value:
+resolveItemDefault(explicitValue, defsService, providerKey, wsKey, "juego_id", rmsItemCode, providerName)
+// Throws IntegrationException if neither the explicit value nor the DB default is present.
+// Uses the multi-item format key: "{fieldPrefix}.{rmsItemCode}" in IN_OMNI_PROVEEDOR_WS_DEFS.
 ```
 
 `toWsKey(capability.name(), movementType)` builds the lookup key: `PRECHECK.CASHIN`, `EXECUTE.CASHOUT`, etc. This is the key used in `IN_OMNI_PROVEEDOR_WS` and `IN_OMNI_PROVEEDOR_WS_DEFS`.
@@ -142,6 +154,8 @@ Audit log inserts use `SELECT NVL(MAX(CODIGO), 0) + 1 FROM table` as a PK sequen
 
 Providers that require a login session (Lotería) are handled by `ProviderTokenService`. Tokens are refreshed at startup and on a schedule by `ProviderTokenRefreshScheduler`. Ecuabet uses a static token from config (`auth.mode=STATIC`); Lotería uses dynamic login (`auth.mode=LOGIN`). The token lives in `IN_OMNI_PROVEEDOR_CONFIG` row with `config_key=token`.
 
+Token resolution in adapters: use `ProviderTokenResolverUseCase.getToken(String providerKey)` to resolve the active token directly by provider key (e.g., `"tradicional"`, `"pega3"`, `"loteria"`). This bypasses the category/subcategory lookup used by the controller endpoint. On receiving a token-expired error from the provider, adapters call `refreshToken(providerKey)` and retry the call once.
+
 `ProviderTokenController` exposes `POST /v1/provider-token/refresh` for on-demand token refresh (useful when a provider session expires unexpectedly in prod).
 
 `CatalogCacheHealthIndicator` integrates with Spring Actuator (`/actuator/health`) and reports `DOWN` when the catalog snapshot is empty or stale.
@@ -188,7 +202,7 @@ When adding a new provider, append new numbered scripts to `docs/bdd/omnistack/`
 - `movement_type` in `BaseTransactionRequest` is optional — OmniStack resolves it from the catalog and sets it on the request before invoking the strategy
 - Lombok throughout; no manual getters/setters
 - No JPA entities in `domain`; persistence adapters map explicitly
-- Strategy provider keys are lowercase strings matching `IN_OMNI_PROVEEDOR_CONFIG.PROVEEDOR_KEY`: `"ecuabet"`, `"loteria"`
+- Strategy provider keys are lowercase strings matching `IN_OMNI_PROVEEDOR_CONFIG.PROVEEDOR_KEY`: `"ecuabet"`, `"loteria"`, `"pega3"`, `"tradicional"`, `"claro"`
 
 ## Test conventions
 
