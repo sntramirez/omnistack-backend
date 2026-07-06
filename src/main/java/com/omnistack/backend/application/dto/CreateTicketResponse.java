@@ -83,10 +83,10 @@ public class CreateTicketResponse extends BaseTransactionResponse {
         private BigDecimal precio;
         private String figura;
 
-        @JsonProperty("juego_id")
+        @JsonProperty("game_id")
         private String juegoId;
 
-        @JsonProperty("sorteo_id")
+        @JsonProperty("draw_id")
         private String sorteoId;
 
         /** Id de boleto — asocia Pozo Millonario con su Revancha cuando comparten valor. */
