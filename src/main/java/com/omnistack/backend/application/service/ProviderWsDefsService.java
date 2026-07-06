@@ -4,10 +4,8 @@ import com.omnistack.backend.application.port.out.ProviderWsDefsPort;
 import jakarta.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -89,23 +87,6 @@ public class ProviderWsDefsService {
             if (entry.getKey().startsWith(prefix)) {
                 String rmsItemCode = entry.getKey().substring(prefix.length());
                 result.put(rmsItemCode, entry.getValue());
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Extrae el conjunto de juego_id realmente configurados (via juego_id.{rmsItemCode})
-     * para la operacion dada — representa los juegos integrados en OmniStack, no el
-     * catalogo completo que devuelve el proveedor (RecuperarJuegosPorMedio puede traer
-     * juegos sin ninguna integracion nuestra detras, ej. Ecuabingo, Bingazo, Pozo Revancha).
-     */
-    public Set<String> getConfiguredGameIds(String providerKey, String wsKey) {
-        String prefix = cacheKey(providerKey, wsKey, "juego_id.");
-        Set<String> result = new HashSet<>();
-        for (Map.Entry<String, String> entry : cache.entrySet()) {
-            if (entry.getKey().startsWith(prefix)) {
-                result.add(entry.getValue());
             }
         }
         return result;

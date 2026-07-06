@@ -23,7 +23,6 @@ import com.omnistack.backend.domain.model.TradicionalFigurasQueryCommand;
 import com.omnistack.backend.domain.model.TradicionalJuegoQueryCommand;
 import com.omnistack.backend.domain.model.TradicionalSorteosQueryCommand;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalFigurasQueryResponse;
-import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalJuegoQueryResponse;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalSorteosQueryResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -126,41 +125,17 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
             figurasResponse = figurasQueryPort.queryFiguras(figurasCmd, figurasUrl);
         }
 
-        return buildResponse(request, capability, serviceDefinition, juegosResponse, sorteosResponse, figurasResponse);
+        return buildResponse(request, juegosResponse, sorteosResponse, figurasResponse);
     }
 
     @SuppressWarnings("unchecked")
     private PrecheckResponse buildResponse(
             BaseTransactionRequest request,
-            Capability capability,
-            ServiceDefinition serviceDefinition,
             ExternalTransactionResponse juegosResp,
             ExternalTransactionResponse sorteosResp,
             ExternalTransactionResponse figurasResp) {
 
         boolean isError = !juegosResp.isApproved();
-
-        // Build games list — solo los juegos con integracion real en OmniStack (juego_id.*
-        // configurado en WS_DEFS), no el catalogo completo que devuelve el proveedor.
-        // Evita exponer juegos sin desarrollo (Ecuabingo, Bingazo, Cupon, La Millonaria,
-        // Facil Lotto) y evita exponer Pozo Revancha (17) como juego seleccionable por su
-        // cuenta — Revancha solo se vende empaquetada con Pozo Millonario (RN-05).
-        List<PrecheckResponse.TradicionalGame> games = null;
-        if (juegosResp.isApproved() && juegosResp.getPayload() != null) {
-            Object rawJuegos = juegosResp.getPayload().get("juegos");
-            if (rawJuegos instanceof List<?> list) {
-                java.util.Set<String> supportedGameIds = providerWsDefsService.getConfiguredGameIds(
-                        PROVIDER_KEY, toWsKey(capability.name(), serviceDefinition.getMovementType()));
-                games = list.stream()
-                        .filter(j -> j instanceof TradicionalJuegoQueryResponse.Juego)
-                        .map(j -> (TradicionalJuegoQueryResponse.Juego) j)
-                        .filter(jg -> supportedGameIds.contains(jg.getJuegoId()))
-                        .map(jg -> PrecheckResponse.TradicionalGame.builder()
-                                .gameId(jg.getJuegoId()).nombre(jg.getNombreJuego())
-                                .build())
-                        .collect(java.util.stream.Collectors.toList());
-            }
-        }
 
         // Build draws list
         List<PrecheckResponse.TradicionalDraw> draws = null;
@@ -208,7 +183,7 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                 .categoryCode(request.getCategoryCode()).subcategoryCode(request.getSubcategoryCode())
                 .serviceProviderCode(request.getServiceProviderCode()).rmsItemCode(request.getRmsItemCode())
                 .errorFlag(isError)
-                .games(games).draws(draws).figures(figures);
+                .draws(draws).figures(figures);
 
         if (isError) {
             builder.error(ErrorDetail.builder()
