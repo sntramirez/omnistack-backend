@@ -149,7 +149,7 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                             return PrecheckResponse.TradicionalDraw.builder()
                                     .drawId(sorteo.getSorteoId()).nombre(sorteo.getNombre())
                                     .fecha(sorteo.getFecha()).precio(sorteo.getPrecio())
-                                    .premioMayor(sorteo.getPremioMayor()).disponible(sorteo.getDisponible())
+                                    .premioMayor(sorteo.getPremioMayor())
                                     .cantidadFraccion(sorteo.getCantidadFraccion())
                                     .tieneRevancha(sorteo.getTieneRevancha())
                                     .juegoRevanchaId(sorteo.getJuegoRevanchaId())

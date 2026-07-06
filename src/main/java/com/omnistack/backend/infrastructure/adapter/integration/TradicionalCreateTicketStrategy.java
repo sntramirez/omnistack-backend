@@ -185,8 +185,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 .map(n -> {
                     TradicionalNumerosQueryResponse.Numero num = (TradicionalNumerosQueryResponse.Numero) n;
                     return CreateTicketResponse.TradicionalNumber.builder()
-                            .numero(num.getNumero()).disponible(num.getDisponible())
-                            .precio(num.getPrecio())
+                            .numero(num.getNumero())
                             .figura(num.getFigura())
                             .juegoId(num.getJuegoId())
                             .sorteoId(num.getSorteoId())
@@ -216,6 +215,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
         Integer totalNumbers = numerosResp != null && numerosResp.getPayload() != null
                 && numerosResp.getPayload().get("totalResults") instanceof Integer intTotal
                 ? intTotal : null;
+        String reservaId = numerosResp != null ? stringValue(numerosResp.getPayload(), "numeroReserva") : null;
 
         CreateTicketResponse.CreateTicketResponseBuilder<?, ?> builder = CreateTicketResponse.builder()
                 .chain(request.getChain()).store(request.getStore()).storeName(request.getStoreName())
@@ -224,7 +224,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 .categoryCode(request.getCategoryCode()).subcategoryCode(request.getSubcategoryCode())
                 .serviceProviderCode(request.getServiceProviderCode()).rmsItemCode(request.getRmsItemCode())
                 .errorFlag(isError)
-                .availableNumbers(availableNumbers).totalNumbers(totalNumbers);
+                .availableNumbers(availableNumbers).totalNumbers(totalNumbers).reservaId(reservaId);
 
         if (isError) {
             builder.error(ErrorDetail.builder()

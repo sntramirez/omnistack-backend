@@ -167,7 +167,6 @@ public class PrecheckResponse extends BaseTransactionResponse {
         private java.math.BigDecimal precio;
         @JsonProperty("premio_mayor")
         private java.math.BigDecimal premioMayor;
-        private Boolean disponible;
 
         @JsonProperty("cantidad_fraccion")
         @Schema(description = "Cantidad de fracciones por entero (solo La Loteria; 0 o null en juegos sin fraccion)")
