@@ -98,6 +98,8 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
                 .mediaDetailId(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "media_detail_id"))
                 .subscriberType(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "subscriber_type"))
                 .subscriptionType(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "subscription_type"))
+                .codCaja(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "cod_caja"))
+                .codSite(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "cod_site"))
                 .build();
 
         ExternalTransactionResponse externalResponse = claroExecutePort.processRecharge(command, operationUrl);

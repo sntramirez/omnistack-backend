@@ -28,4 +28,6 @@ public class ClaroExecuteCommand {
     String mediaDetailId;
     String subscriberType;
     String subscriptionType;
+    String codCaja;
+    String codSite;
 }

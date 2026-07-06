@@ -23,4 +23,6 @@ public class ClaroPrecheckCommand {
     String companyId;
     String externalOperation;
     String mediaId;
+    String codCaja;
+    String codSite;
 }

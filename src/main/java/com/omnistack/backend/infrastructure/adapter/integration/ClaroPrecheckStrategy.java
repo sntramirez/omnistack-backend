@@ -10,6 +10,7 @@ import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrat
 import com.omnistack.backend.application.port.out.strategy.PrecheckStrategy;
 import com.omnistack.backend.application.service.AdItemServicioService;
 import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -35,6 +36,7 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
 
     private final ClaroPrecheckPort claroPrecheckPort;
     private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
     private final AdItemServicioService adItemServicioService;
 
@@ -87,6 +89,8 @@ public class ClaroPrecheckStrategy extends AbstractProviderStrategy implements P
                 .companyId(providerConfigService.mapValue(PROVIDER_KEY, "company_id", request.getChain()))
                 .externalOperation(externalOperation)
                 .mediaId(providerConfigService.getString(PROVIDER_KEY, "media_id"))
+                .codCaja(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "cod_caja"))
+                .codSite(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "cod_site"))
                 .build();
 
         ExternalTransactionResponse externalResponse = claroPrecheckPort.validateRecharge(command, operationUrl);
