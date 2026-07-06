@@ -147,7 +147,8 @@ public class LoteriaTradicionalExecuteStrategy extends AbstractProviderStrategy 
                 .amount(request.getAmount())
                 .boletoClave(stringValue(payload, "boletoClave"))
                 .boletoQr(stringValue(payload, "boletoQr"))
-                .fechaVenta(stringValue(payload, "fechaVenta"));
+                .fechaVenta(stringValue(payload, "fechaVenta"))
+                .fraccionesVendidas(stringValue(payload, "fraccionesVendidas"));
 
         if (isError) {
             builder.error(ErrorDetail.builder()
