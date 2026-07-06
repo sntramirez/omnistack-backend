@@ -10,6 +10,7 @@ import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrat
 import com.omnistack.backend.application.port.out.strategy.ExecuteStrategy;
 import com.omnistack.backend.application.service.AdItemServicioService;
 import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.application.service.ProviderWsDefsService;
 import com.omnistack.backend.application.service.ProviderWsService;
 import com.omnistack.backend.config.properties.AppProperties;
 import com.omnistack.backend.domain.enums.Capability;
@@ -35,6 +36,7 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
 
     private final ClaroExecutePort claroExecutePort;
     private final ProviderConfigService providerConfigService;
+    private final ProviderWsDefsService providerWsDefsService;
     private final ProviderWsService providerWsService;
     private final AdItemServicioService adItemServicioService;
 
@@ -90,6 +92,12 @@ public class ClaroExecuteStrategy extends AbstractProviderStrategy implements Ex
                 .authorizationNumber(request.getAuthorization())
                 .companyId(providerConfigService.mapValue(PROVIDER_KEY, "company_id", request.getChain()))
                 .externalOperation(externalOperation)
+                .consumerId(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "consumer_id"))
+                .channelId(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "channel_id"))
+                .mediaId(providerConfigService.getString(PROVIDER_KEY, "media_id"))
+                .mediaDetailId(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "media_detail_id"))
+                .subscriberType(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "subscriber_type"))
+                .subscriptionType(providerWsDefsService.getString(PROVIDER_KEY, wsKey, "subscription_type"))
                 .build();
 
         ExternalTransactionResponse externalResponse = claroExecutePort.processRecharge(command, operationUrl);
