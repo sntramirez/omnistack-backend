@@ -24,6 +24,7 @@ import com.omnistack.backend.domain.model.TradicionalJuegoQueryCommand;
 import com.omnistack.backend.domain.model.TradicionalSorteosQueryCommand;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalFigurasQueryResponse;
 import com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto.TradicionalSorteosQueryResponse;
+import com.omnistack.backend.shared.exception.IntegrationException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -46,6 +47,7 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
     private static final String PRECHECK_SORTEOS_KEY = "PRECHECK_SORTEOS";
     private static final String PRECHECK_FIGURAS_KEY = "PRECHECK_FIGURAS";
     private static final String JUEGO_ID_FIELD_PREFIX = "juego_id";
+    private static final String JUEGO_ID_POZO_MILLONARIO = "5";
 
     private final TradicionalJuegoQueryPort juegoQueryPort;
     private final TradicionalSorteosQueryPort sorteosQueryPort;
@@ -125,12 +127,13 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
             figurasResponse = figurasQueryPort.queryFiguras(figurasCmd, figurasUrl);
         }
 
-        return buildResponse(request, juegosResponse, sorteosResponse, figurasResponse);
+        return buildResponse(request, juegoId, juegosResponse, sorteosResponse, figurasResponse);
     }
 
     @SuppressWarnings("unchecked")
     private PrecheckResponse buildResponse(
             BaseTransactionRequest request,
+            String juegoId,
             ExternalTransactionResponse juegosResp,
             ExternalTransactionResponse sorteosResp,
             ExternalTransactionResponse figurasResp) {
@@ -173,6 +176,21 @@ public class LoteriaTradicionalPrecheckStrategy extends AbstractProviderStrategy
                                     .descripcion(figura.getDescripcion())
                                     .build();
                         }).collect(java.util.stream.Collectors.toList());
+            }
+        }
+
+        // El proveedor puede responder codError=0 (sin error tecnico) pero sin datos utiles
+        // (listaDetalle=null) — ej. sin sorteos abiertos para venta en este momento. Sin sorteos
+        // no hay como continuar el flujo para ningun juego; sin figuras, Pozo Millonario no puede
+        // completar la seleccion de mascota (RN-05/RF-06 de negocio).
+        if (!isError) {
+            if (draws == null || draws.isEmpty()) {
+                throw new IntegrationException(
+                        "Loteria Nacional no tiene sorteos disponibles para el juego " + juegoId + " en este momento");
+            }
+            if (JUEGO_ID_POZO_MILLONARIO.equals(juegoId) && (figures == null || figures.isEmpty())) {
+                throw new IntegrationException(
+                        "Loteria Nacional no tiene figuras/mascotas disponibles para Pozo Millonario en este momento");
             }
         }
 
