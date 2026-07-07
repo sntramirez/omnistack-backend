@@ -58,6 +58,60 @@ All transaction endpoints (`/v1/preCheck`, `/v1/execute`, `/v1/verify`, `/v1/rev
 4. Each external HTTP call logs to `WsExtLogService.log(ProviderCallLog)` (async via `loggingExecutor`) which writes to `IN_OMNI_LOGS_WS_EXT`
 5. `OracleAuditLogAdapter` saves to `IN_OMNI_LOGS_APP` (async, `loggingExecutor`)
 6. `OracleRegistroTrxAdapter` saves to `IN_OMNI_REGISTRO_TRX` for EXECUTE, CREATE_TICKET, and REVERSE (not precheck/verify)
+7. If `ServiceDefinition.homologatedAuth` is `true`, `TransactionOrchestrationService` generates a homologated code (10-char alphanumeric), stores the original in `AUTHORIZATION` and the homologated code in `CP_VAR1`, then returns the homologated code to the POS
+
+### Cash-out daily quota control
+
+For `CASH_OUT` services (`MovementType.CASH_OUT`), `TransactionOrchestrationService` enforces a daily quota limit per store (farmacia) before and after provider invocation:
+
+**PRECHECK:** `CashOutQuotaService.reserveQuota()` validates:
+1. Transaction amount ≤ `MONTO_MAX` (max per transaction)
+2. Transaction amount ≤ available daily quota (`MONTO_MAX` − already consumed)
+
+If valid, inserts a `RESERVADO` row in `IN_OMNI_CASHOUT_CUPO_DIARIO`. If not, throws `BusinessException` (HTTP 422).
+
+**EXECUTE:** `CashOutQuotaService.confirmQuota()` changes the entry from `RESERVADO` → `CONFIRMADO`.
+
+**REVERSE:** `CashOutQuotaService.revertQuota()` changes the entry to `REVERTIDO` **only if the reverse happens on the same calendar day** as the original transaction. If the reverse is on a later date, the quota is NOT restored (it belonged to a different day's allocation).
+
+**Expiration scheduler:** `CashOutQuotaExpirationScheduler` runs every `app.cashout-quota.expiration-scheduler-rate-ms` (default 60s) and expires any `RESERVADO` entry older than `app.cashout-quota.reservation-timeout-minutes` (default 30 min), setting its state to `EXPIRADO` and restoring the quota.
+
+Key classes: `CashOutQuotaService`, `CashOutQuotaPort`, `OracleCashOutQuotaAdapter`, `CashOutQuotaExpirationScheduler`, `CashOutQuotaEntry`, `CashOutQuotaStatus`.
+
+Table: `TUKUNAFUNC.IN_OMNI_CASHOUT_CUPO_DIARIO` (DDL: `docs/bdd/omnistack/26_DDL_CASHOUT_CUPO_DIARIO.sql`).
+
+### Transaction amount validation (non-CASH_OUT)
+
+For all services that are NOT `CASH_OUT`, `TransactionOrchestrationService` enforces per-transaction amount limits before calling the provider:
+
+**PRECHECK and EXECUTE:** `TransactionAmountValidationService.validate()` checks:
+1. Transaction amount ≤ `MONTO_MAX` from `AD_SERVICIO_PARAMETROS` (via `ServiceDefinition.getMaxAmount()`)
+2. Transaction amount ≥ `MONTO_MIN` from `AD_SERVICIO_PARAMETROS` (via `ServiceDefinition.getMinAmount()`)
+
+If the amount violates either limit, throws `BusinessException` (HTTP 422) with a descriptive message including the amount, the limit, and the item code.
+
+This control is per-transaction only — no daily accumulation or quota reservation is involved (unlike CASH_OUT). CASH_OUT items are excluded because they already validate the amount inside `CashOutQuotaService.reserveQuota()`.
+
+Key class: `TransactionAmountValidationService`.
+
+### Homologated authorization code
+
+When `AD_SERVICIO_PARAMETROS.ID_HOMOLOGADO = 'S'` for a given item, OmniStack generates an internal authorization code instead of exposing the provider's raw code to the POS.
+
+**EXECUTE / CREATE_TICKET flow:**
+1. `ServiceDefinition.isHomologatedAuth()` returns `true`
+2. Strategy executes normally — provider returns its original authorization
+3. `HomologatedCodeService.generate()` produces a 10-char alphanumeric code (timestamp base-36 + random)
+4. `IN_OMNI_REGISTRO_TRX`: `AUTHORIZATION` = provider's original, `CP_VAR1` = homologated code
+5. Response to POS: `authorization` field = homologated code
+
+**REVERSE flow:**
+1. POS sends the homologated code in `authorization`
+2. `TransactionOrchestrationService.resolveOriginalAuthForReverse()` queries `IN_OMNI_REGISTRO_TRX` by `CP_VAR1`
+3. Replaces `request.authorization` with the original provider code
+4. Strategy sends the original to the provider
+
+Key classes: `HomologatedCodeService` (generation), `RegistroTrxPort.findOriginalAuthByHomologatedCode()` (resolution), `TransactionOrchestrationService` (orchestration).
 
 ### Catalog — two separate caches
 
@@ -149,6 +203,7 @@ Audit log inserts use `SELECT NVL(MAX(CODIGO), 0) + 1 FROM table` as a PK sequen
 | `IN_OMNI_LOGS_APP` | `OracleAuditLogAdapter` | Every transaction (EXECUTE, PRECHECK, VERIFY, REVERSE) — async |
 | `IN_OMNI_LOGS_WS_EXT` | `OracleWsExtLogAdapter` | Every external HTTP call to provider — async via `WsExtLogService.log()` |
 | `IN_OMNI_REGISTRO_TRX` | `OracleRegistroTrxAdapter` | EXECUTE, CREATE_TICKET, REVERSE on success — async |
+| `IN_OMNI_CASHOUT_CUPO_DIARIO` | `OracleCashOutQuotaAdapter` | PRECHECK (reserve), EXECUTE (confirm), REVERSE (revert) for CASH_OUT — sync |
 
 ### Provider token management
 
@@ -178,6 +233,8 @@ Numbered SQL scripts must be run in order:
 
 - `docs/bdd/local-setup/` — one-time local dev environment (admin, RMS DDL, grants)
 - `docs/bdd/omnistack/` — OmniStack schema DDL + DML (01 = DDL, 02+ = data/fixes)
+  - Script `25` adds `ID_HOMOLOGADO` column to `AD_SERVICIO_PARAMETROS`
+  - Script `26` creates `IN_OMNI_CASHOUT_CUPO_DIARIO` table for CASH_OUT daily quota control
 
 When adding a new provider, append new numbered scripts to `docs/bdd/omnistack/` — never modify existing ones.
 
@@ -197,7 +254,7 @@ When adding a new provider, append new numbered scripts to `docs/bdd/omnistack/`
 
 - All amounts: `BigDecimal` with 2 decimals, dot separator (`1000.00`); `double` only appears in legacy DTOs
 - `uuid` from the request propagates to every external provider as its correlation ID (`codigotrn` for LN, `EXTERNALTRANSACTIONID` for Claro)
-- `authorization` in every OmniStack response holds the provider's tracking ID, regardless of what the provider names it
+- `authorization` in every OmniStack response holds the provider's tracking ID, regardless of what the provider names it — **unless** the item has `ID_HOMOLOGADO = 'S'`, in which case it holds the homologated code and the original is stored in `IN_OMNI_REGISTRO_TRX.AUTHORIZATION`
 - Internal credentials (tokens, shop IDs, API keys) are **never** passed from the front-end — they come from `ProviderConfigService`
 - `movement_type` in `BaseTransactionRequest` is optional — OmniStack resolves it from the catalog and sets it on the request before invoking the strategy
 - Lombok throughout; no manual getters/setters
