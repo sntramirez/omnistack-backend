@@ -152,8 +152,10 @@ public class Pega3WebClientAdapter implements
         AppProperties.ProviderProperties provider = getProviderProperties();
         String token = resolveToken();
         String productoVender = resolveProductoVender(provider);
+        String deviceId = requiredValue(provider.getAuth().getLogin().getUsername(), "auth.login.username");
 
         Pega3DrawQueryRequest request = Pega3DrawQueryRequest.builder()
+                .deviceId(deviceId)
                 .token(token)
                 .productoVender(productoVender)
                 .build();
