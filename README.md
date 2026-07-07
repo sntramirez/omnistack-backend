@@ -74,6 +74,8 @@ Propiedades principales:
 - `app.integrations.default-read-timeout-ms`
 - `app.integrations.tls-protocols`
 - `app.integrations.mock-enabled`
+- `app.cashout-quota.reservation-timeout-minutes`
+- `app.cashout-quota.expiration-scheduler-rate-ms`
 - `app.integration.providers.default.base-url`
 - `app.integration.providers.default.technical-user`
 - `app.integration.providers.ecuabet.base-url`
@@ -153,6 +155,8 @@ Variables de entorno principales:
 - `APP_INTEGRATIONS_DEFAULT_READ_TIMEOUT_MS` (default `60000`)
 - `APP_INTEGRATIONS_TLS_PROTOCOLS` (default `TLSv1.2`)
 - `APP_INTEGRATIONS_MOCK_ENABLED`
+- `APP_CASHOUT_QUOTA_RESERVATION_TIMEOUT_MINUTES` (default `30`)
+- `APP_CASHOUT_QUOTA_EXPIRATION_SCHEDULER_RATE_MS` (default `60000`)
 - `APP_INTEGRATION_PROVIDERS_DEFAULT_BASE_URL`
 - `APP_INTEGRATION_PROVIDERS_DEFAULT_TECHNICAL_USER`
 - `APP_INTEGRATION_PROVIDERS_ECUABET_BASE_URL`
@@ -524,6 +528,57 @@ El environment local centraliza las variables comunes de ejecucion (`baseUrl`, `
 - `POST /v1/provider-token/refresh` fuerza el refresh manual del proveedor solicitado.
 - El endpoint manual solo aplica a proveedores con `auth.mode=LOGIN`; si el proveedor usa token estatico responde error de negocio.
 
+## Homologacion de codigo de autorizacion
+
+Cuando un item tiene `AD_SERVICIO_PARAMETROS.ID_HOMOLOGADO = 'S'`, OmniStack no expone el codigo de autorizacion original del proveedor al POS. En su lugar:
+
+- **EXECUTE / CREATE_TICKET**: genera un codigo alfanumerico unico de 10 caracteres y lo devuelve en el campo `authorization` del response. El codigo original del proveedor queda en `IN_OMNI_REGISTRO_TRX.AUTHORIZATION` y el homologado en `CP_VAR1`.
+- **REVERSE**: el POS envia el codigo homologado en `authorization`. OmniStack resuelve el codigo original del proveedor desde BD y lo envia al endpoint externo.
+
+Script de migracion: `docs/bdd/omnistack/25_ALTER_AD_SERVICIO_PARAMETROS_ID_HOMOLOGADO.sql`
+
+## Control de cupos diarios CASH_OUT
+
+OmniStack implementa un control de cupos maximos diarios de retiro por local (farmacia) para transacciones CASH_OUT. El cupo se administra a nivel de item RMS por farmacia.
+
+### Reglas de negocio
+
+- El campo `MONTO_MAX` de `AD_SERVICIO_PARAMETROS` define simultaneamente:
+  - El monto maximo por transaccion individual
+  - El cupo maximo diario por local para ese item CASH_OUT
+- Si una transaccion alcanza el cupo maximo diario, el local no puede emitir un nuevo CASH_OUT hasta el dia siguiente.
+
+### Flujo del cupo
+
+1. **PRECHECK**: Reserva el monto como cupo pendiente (estado `RESERVADO`). Si el cupo disponible es insuficiente, responde `is_error=true` con codigo `BUSINESS_ERROR` (HTTP 422).
+2. **EXECUTE**: Confirma la reserva (estado `CONFIRMADO`). El cupo queda consumido definitivamente.
+3. **REVERSE** (mismo dia): Restituye el cupo al saldo disponible del local (estado `REVERTIDO`). Si el reverso se realiza en una fecha posterior a la transaccion original, el cupo NO se restablece.
+4. **Expiracion automatica**: Un scheduler periodico expira reservas no confirmadas tras el timeout configurable (estado `EXPIRADO`), restituyendo el cupo.
+
+### Tabla de bitacora
+
+Esquema: `TUKUNAFUNC`  
+Tabla: `IN_OMNI_CASHOUT_CUPO_DIARIO`  
+Script DDL: `docs/bdd/omnistack/26_DDL_CASHOUT_CUPO_DIARIO.sql`
+
+Estados: `RESERVADO` | `CONFIRMADO` | `EXPIRADO` | `REVERTIDO`
+
+### Configuracion
+
+| Property | Env var | Default | Descripcion |
+|---|---|---|---|
+| `app.cashout-quota.reservation-timeout-minutes` | `APP_CASHOUT_QUOTA_RESERVATION_TIMEOUT_MINUTES` | `30` | Minutos para confirmar una reserva antes de expirarla |
+| `app.cashout-quota.expiration-scheduler-rate-ms` | `APP_CASHOUT_QUOTA_EXPIRATION_SCHEDULER_RATE_MS` | `60000` | Intervalo del scheduler de expiracion (ms) |
+
+### Clases involucradas
+
+- `CashOutQuotaService` — logica de negocio (reservar, confirmar, revertir, expirar)
+- `CashOutQuotaPort` — puerto de salida
+- `OracleCashOutQuotaAdapter` — adaptador Oracle
+- `CashOutQuotaExpirationScheduler` — scheduler periodico
+- `CashOutQuotaEntry` — modelo de dominio
+- `CashOutQuotaStatus` — enum de estados
+
 ## Integraciones externas
 
 La resolucion de flujos depende de:
@@ -537,6 +592,16 @@ La resolucion de flujos depende de:
 - `ReverseStrategy`
 
 No hay logica por proveedor en los controllers. Las integraciones externas quedan reales por defecto. Si un servicio catalogado no tiene estrategia y endpoint externo configurados, OMNISTACK responde error de configuracion en lugar de simular una respuesta exitosa.
+
+### Validacion de monto maximo/minimo por transaccion
+
+Para todos los servicios que NO son CASH_OUT, el orquestador valida que el monto de cada transaccion este dentro del rango [`MONTO_MIN`, `MONTO_MAX`] configurado en `AD_SERVICIO_PARAMETROS` para el item correspondiente.
+
+- Se ejecuta en PRECHECK y EXECUTE antes de invocar al proveedor externo.
+- Si el monto excede MONTO_MAX o es inferior a MONTO_MIN, responde HTTP 422 con error de negocio descriptivo.
+- Este control es por transaccion individual — no involucra cupos diarios ni acumulados.
+- Clase responsable: `TransactionAmountValidationService`
+- Los items CASH_OUT quedan excluidos porque ya tienen validacion de monto dentro de `CashOutQuotaService`.
 
 ### ECUABET Buscar usuario
 
