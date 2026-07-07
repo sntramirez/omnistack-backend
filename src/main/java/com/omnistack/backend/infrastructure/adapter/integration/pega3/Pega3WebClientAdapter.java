@@ -312,8 +312,10 @@ public class Pega3WebClientAdapter implements
                             .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                     .defaultIfEmpty("")
                                     .flatMap(body -> {
-                                        traceErrorToConsole("Pega3 generarComprobante error", fullUrl, body);
-                                        String errMsg = "Error HTTP al invocar GenerarComprobantePega: " + body;
+                                        int httpStatus = clientResponse.statusCode().value();
+                                        traceErrorToConsole("Pega3 generarComprobante error HTTP " + httpStatus, fullUrl, body);
+                                        String errMsg = "Error HTTP " + httpStatus + " al invocar GenerarComprobantePega"
+                                                + (body.isBlank() ? " (respuesta sin cuerpo)" : ": " + body);
                                         wsExtLogService.log(ProviderCallLog.builder()
                                                 .uuid(command.getUuid())
                                                 .providerKey(PROVIDER_KEY)
@@ -322,6 +324,7 @@ public class Pega3WebClientAdapter implements
                                                 .requestJson(null)
                                                 .responseJson(body)
                                                 .durationMs(System.currentTimeMillis() - startMs)
+                                                .httpStatus(httpStatus)
                                                 .isError(true)
                                                 .errorMessage(errMsg)
                                                 .build());
@@ -434,8 +437,10 @@ public class Pega3WebClientAdapter implements
                             .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                     .defaultIfEmpty("")
                                     .flatMap(body -> {
-                                        traceErrorToConsole("Pega3 " + logOperation + " error", url, body);
-                                        String errMsg = "Error HTTP al invocar " + errorOperation + ": " + body;
+                                        int httpStatus = clientResponse.statusCode().value();
+                                        traceErrorToConsole("Pega3 " + logOperation + " error HTTP " + httpStatus, url, body);
+                                        String errMsg = "Error HTTP " + httpStatus + " al invocar " + errorOperation
+                                                + (body.isBlank() ? " (respuesta sin cuerpo)" : ": " + body);
                                         wsExtLogService.log(ProviderCallLog.builder()
                                                 .uuid(uuid)
                                                 .providerKey(PROVIDER_KEY)
@@ -444,6 +449,7 @@ public class Pega3WebClientAdapter implements
                                                 .requestJson(requestJson)
                                                 .responseJson(body)
                                                 .durationMs(System.currentTimeMillis() - startMs)
+                                                .httpStatus(httpStatus)
                                                 .isError(true)
                                                 .errorMessage(errMsg)
                                                 .build());
