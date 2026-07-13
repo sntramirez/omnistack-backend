@@ -4390,7 +4390,7 @@
       "id": "28c02b70-49c8-4055-9820-e6b88ded03ab",
       "item": [
         {
-          "name": "Lotería Nacional — rms=100713842 · subcategory=1122",
+          "name": "Lotería Nacional — rms=100713842 · subcategory=1128",
           "id": "87465219-ecf9-49e2-b7ce-47f14dd13b89",
           "item": [
             {
@@ -5055,7 +5055,7 @@
           "description": "Flujo: PRECHECK → EXECUTE (document+username+phone+boleto_data) → VERIFY → REVERSE. EXECUTE devuelve ventaId como authorization."
         },
         {
-          "name": "Lotto — rms=100713844 · subcategory=1123",
+          "name": "Lotto — rms=100713844 · subcategory=1129",
           "id": "8ba05e62-523f-4f56-a9de-f25a49f73b47",
           "item": [
             {
@@ -5526,7 +5526,7 @@
           "description": "Mismo flujo que Lotería Nacional."
         },
         {
-          "name": "Pozzo Millonario — rms=100713846 · subcategory=1124",
+          "name": "Pozzo Millonario — rms=100713846 · subcategory=1130",
           "id": "175ffc4c-34c6-4948-8854-66d0c1491c0e",
           "item": [
             {
@@ -6003,7 +6003,7 @@
       "id": "9eedcd2e-99c8-4388-bd9d-01ffaebde8e7",
       "item": [
         {
-          "name": "Lotería Nacional — rms=100708854 · subcategory=1122",
+          "name": "Lotería Nacional — rms=100708854 · subcategory=1128",
           "id": "1dc923e6-433c-4512-b9e1-2fdc34042441",
           "item": [
             {
@@ -6019,7 +6019,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1128,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -6050,7 +6050,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1128,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6078,7 +6078,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Boleto con premio disponible para pago\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"983\",\n  \"subcategory_code\": \"1122\",\n  \"service_provider_code\": \"407925\",\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"amount\": 1000000.0,\n  \"ticket_status\": \"\",\n  \"is_winner\": true,\n  \"prize_amount\": 1000000.0,\n  \"mpi\": \"957\"\n}"
+                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Boleto con premio disponible para pago\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"984\",\n  \"subcategory_code\": \"1128\",\n  \"service_provider_code\": \"3445\",\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"amount\": 1000000.0,\n  \"ticket_status\": \"\",\n  \"is_winner\": true,\n  \"prize_amount\": 1000000.0,\n  \"mpi\": \"957\"\n}"
                 },
                 {
                   "name": "422 — Boleto sin premio o ya pagado",
@@ -6092,7 +6092,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1128,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6137,7 +6137,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 1000000.0\n}",
+                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1128,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 1000000.0\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -6168,7 +6168,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1122,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 1000000.0\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1128,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"664071071637\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 1000000.0\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6196,7 +6196,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Pago de premio Tradicionales completado\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"983\",\n  \"subcategory_code\": \"1122\",\n  \"service_provider_code\": \"407925\",\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"999\",\n  \"amount\": 1000000.0,\n  \"pci\": \"999\",\n  \"ref\": \"473856\"\n}"
+                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Pago de premio Tradicionales completado\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"984\",\n  \"subcategory_code\": \"1128\",\n  \"service_provider_code\": \"3445\",\n  \"rms_item_code\": \"100708854\",\n  \"authorization\": \"999\",\n  \"amount\": 1000000.0,\n  \"pci\": \"999\",\n  \"ref\": \"473856\"\n}"
                 }
               ]
             }
@@ -6204,7 +6204,7 @@
           "description": "CASH_OUT de Lotería Nacional (pago de premio de boleto electronico ya vendido)."
         },
         {
-          "name": "Lotto — rms=100708855 · subcategory=1123",
+          "name": "Lotto — rms=100708855 · subcategory=1129",
           "id": "d915a45b-f7f0-460f-aba9-b429f77d7870",
           "item": [
             {
@@ -6220,7 +6220,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1123,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1129,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -6251,7 +6251,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1123,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1129,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6279,7 +6279,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Boleto con premio disponible para pago\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"983\",\n  \"subcategory_code\": \"1123\",\n  \"service_provider_code\": \"407925\",\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"amount\": 500000.0,\n  \"ticket_status\": \"\",\n  \"is_winner\": true,\n  \"prize_amount\": 500000.0,\n  \"mpi\": \"957\"\n}"
+                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Boleto con premio disponible para pago\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"984\",\n  \"subcategory_code\": \"1129\",\n  \"service_provider_code\": \"3445\",\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"amount\": 500000.0,\n  \"ticket_status\": \"\",\n  \"is_winner\": true,\n  \"prize_amount\": 500000.0,\n  \"mpi\": \"957\"\n}"
                 },
                 {
                   "name": "422 — Boleto sin premio o ya pagado",
@@ -6293,7 +6293,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1123,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1129,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6338,7 +6338,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1123,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 500000.0\n}",
+                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1129,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 500000.0\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -6369,7 +6369,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1123,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 500000.0\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1129,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"664071071638\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 500000.0\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6397,7 +6397,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Pago de premio Tradicionales completado\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"983\",\n  \"subcategory_code\": \"1123\",\n  \"service_provider_code\": \"407925\",\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"999\",\n  \"amount\": 500000.0,\n  \"pci\": \"999\",\n  \"ref\": \"473856\"\n}"
+                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Pago de premio Tradicionales completado\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"984\",\n  \"subcategory_code\": \"1129\",\n  \"service_provider_code\": \"3445\",\n  \"rms_item_code\": \"100708855\",\n  \"authorization\": \"999\",\n  \"amount\": 500000.0,\n  \"pci\": \"999\",\n  \"ref\": \"473856\"\n}"
                 }
               ]
             }
@@ -6405,7 +6405,7 @@
           "description": "CASH_OUT de Lotto (pago de premio de boleto electronico ya vendido)."
         },
         {
-          "name": "Pozzo Millonario — rms=100708856 · subcategory=1124",
+          "name": "Pozzo Millonario — rms=100708856 · subcategory=1130",
           "id": "da3c4b64-7c06-4e6d-a47a-6cff9cc1ed03",
           "item": [
             {
@@ -6421,7 +6421,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1124,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1130,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -6452,7 +6452,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1124,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1130,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6480,7 +6480,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Boleto con premio disponible para pago\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"983\",\n  \"subcategory_code\": \"1124\",\n  \"service_provider_code\": \"407925\",\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"amount\": 250000.0,\n  \"ticket_status\": \"\",\n  \"is_winner\": true,\n  \"prize_amount\": 250000.0,\n  \"mpi\": \"957\"\n}"
+                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Boleto con premio disponible para pago\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"984\",\n  \"subcategory_code\": \"1130\",\n  \"service_provider_code\": \"3445\",\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"amount\": 250000.0,\n  \"ticket_status\": \"\",\n  \"is_winner\": true,\n  \"prize_amount\": 250000.0,\n  \"mpi\": \"957\"\n}"
                 },
                 {
                   "name": "422 — Boleto sin premio o ya pagado",
@@ -6494,7 +6494,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1124,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1130,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"tipo_documento\": 2\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6539,7 +6539,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1124,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 250000.0\n}",
+                  "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1130,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 250000.0\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -6570,7 +6570,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1124,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 250000.0\n}",
+                      "raw": "{\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"uuid\": \"{{$guid}}\",\n  \"category_code\": 984,\n  \"subcategory_code\": 1130,\n  \"service_provider_code\": 3445,\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"664071071639\",\n  \"document\": \"0901111112\",\n  \"username\": \"Ariel Castillo\",\n  \"tipo_documento\": 2,\n  \"mpi\": \"957\",\n  \"amount\": 250000.0\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -6598,7 +6598,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Pago de premio Tradicionales completado\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"983\",\n  \"subcategory_code\": \"1124\",\n  \"service_provider_code\": \"407925\",\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"999\",\n  \"amount\": 250000.0,\n  \"pci\": \"999\",\n  \"ref\": \"473856\"\n}"
+                  "body": "{\n  \"is_error\": false,\n  \"error\": null,\n  \"status\": {\n    \"code\": \"00\",\n    \"message\": \"Pago de premio Tradicionales completado\"\n  },\n  \"uuid\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n  \"chain\": \"1\",\n  \"store\": \"148\",\n  \"store_name\": \"FYBECA AMAZONAS\",\n  \"pos\": \"1\",\n  \"channel_POS\": \"POS\",\n  \"category_code\": \"984\",\n  \"subcategory_code\": \"1130\",\n  \"service_provider_code\": \"3445\",\n  \"rms_item_code\": \"100708856\",\n  \"authorization\": \"999\",\n  \"amount\": 250000.0,\n  \"pci\": \"999\",\n  \"ref\": \"473856\"\n}"
                 }
               ]
             }
