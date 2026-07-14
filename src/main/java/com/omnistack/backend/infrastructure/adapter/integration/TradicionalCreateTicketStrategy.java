@@ -100,8 +100,10 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 request, provider, juegoId, drawId, combinacion, figuraId, sugerir, registros, cantidadFracciones, numerosUrl);
 
         ExternalTransactionResponse revanchaNumerosResponse = null;
+        java.math.BigDecimal precio = null;
         if (sorteosUrl != null && !sorteosUrl.isBlank()) {
             ExternalTransactionResponse sorteosResponse = querySorteos(request, provider, juegoId, sorteosUrl);
+            precio = findPrecio(sorteosResponse, drawId);
             RevanchaInfo revanchaInfo = findRevanchaInfo(sorteosResponse, drawId);
             if (revanchaInfo != null) {
                 revanchaNumerosResponse = queryNumeros(
@@ -110,7 +112,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
             }
         }
 
-        return buildResponse(request, numerosResponse, revanchaNumerosResponse);
+        return buildResponse(request, numerosResponse, revanchaNumerosResponse, precio);
     }
 
     private ExternalTransactionResponse querySorteos(
@@ -149,6 +151,24 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
     }
 
     private record RevanchaInfo(String juegoRevanchaId, String sorteoRevanchaId) {
+    }
+
+    @SuppressWarnings("unchecked")
+    private java.math.BigDecimal findPrecio(ExternalTransactionResponse sorteosResponse, String drawId) {
+        if (sorteosResponse == null || !sorteosResponse.isApproved() || sorteosResponse.getPayload() == null) {
+            return null;
+        }
+        Object rawSorteos = sorteosResponse.getPayload().get("listaSorteos");
+        if (!(rawSorteos instanceof List<?> list)) {
+            return null;
+        }
+        return list.stream()
+                .filter(s -> s instanceof TradicionalSorteosQueryResponse.Sorteo)
+                .map(s -> (TradicionalSorteosQueryResponse.Sorteo) s)
+                .filter(sorteo -> drawId.equals(sorteo.getSorteoId()))
+                .map(TradicionalSorteosQueryResponse.Sorteo::getPrecio)
+                .findFirst()
+                .orElse(null);
     }
 
     @SuppressWarnings("unchecked")
@@ -198,7 +218,8 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
     private CreateTicketResponse buildResponse(
             BaseTransactionRequest request,
             ExternalTransactionResponse numerosResp,
-            ExternalTransactionResponse revanchaNumerosResp) {
+            ExternalTransactionResponse revanchaNumerosResp,
+            java.math.BigDecimal precio) {
 
         boolean isError = numerosResp == null || !numerosResp.isApproved();
 
@@ -224,7 +245,8 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 .categoryCode(request.getCategoryCode()).subcategoryCode(request.getSubcategoryCode())
                 .serviceProviderCode(request.getServiceProviderCode()).rmsItemCode(request.getRmsItemCode())
                 .errorFlag(isError)
-                .availableNumbers(availableNumbers).totalNumbers(totalNumbers).reservaId(reservaId);
+                .availableNumbers(availableNumbers).totalNumbers(totalNumbers).reservaId(reservaId)
+                .precio(precio);
 
         if (isError) {
             builder.error(ErrorDetail.builder()

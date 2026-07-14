@@ -77,6 +77,10 @@ public class CreateTicketResponse extends BaseTransactionResponse {
             + "debe reenviarse tal cual en EXECUTE para vender los numeros aqui reservados")
     private String reservaId;
 
+    @Schema(example = "1.00", description = "Precio de venta al publico (pvp) del sorteo consultado "
+            + "(solo Tradicionales) — usar amount = precio x cantidad de boletos en EXECUTE")
+    private java.math.BigDecimal precio;
+
     @Data
     @Builder
     @NoArgsConstructor
