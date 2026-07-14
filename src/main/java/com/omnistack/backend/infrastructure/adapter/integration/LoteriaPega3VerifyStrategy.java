@@ -3,26 +3,47 @@ package com.omnistack.backend.infrastructure.adapter.integration;
 import com.omnistack.backend.shared.constants.StatusCodes;
 import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionRequest;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.BaseTransactionResponse;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.ErrorDetail;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.StatusDetail;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.VerifyRequest;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.dto.VerifyResponse;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.port.out.Pega3ComprobanteQueryPort;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.port.out.Pega3VerifyTicketPort;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.service.ComprobanteUrlService;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.service.ProviderConfigService;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.service.ProviderWsDefsService;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.application.service.ProviderWsService;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.config.properties.AppProperties;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.domain.enums.Capability;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.domain.enums.MovementType;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.domain.model.ExternalTransactionResponse;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.domain.model.Pega3ComprobanteQueryCommand;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.domain.model.Pega3VerifyTicketCommand;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.domain.model.ServiceDefinition;
+import com.omnistack.backend.shared.util.CanonicalErrorCodeMapper;
 import com.omnistack.backend.shared.exception.IntegrationException;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -87,11 +108,8 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
 
         String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
         ExternalTransactionResponse externalResponse = pega3VerifyTicketPort.verifyTicket(command, operationUrl, wsKey);
-        ComprobanteData comprobante = fetchComprobanteIfAvailable(request, serviceDefinition, provider);
-        return buildResponse(request, externalResponse, comprobante);
-    }
-
-    private record ComprobanteData(String base64, String contentType) {
+        String comprobanteB64 = fetchComprobanteIfAvailable(request, serviceDefinition, provider);
+        return buildResponse(request, externalResponse, comprobanteB64);
     }
 
     /**
@@ -99,7 +117,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
      * y el request trae "transaccion" — la respuesta de ConsultarTicket/CrearTicket de Pega3
      * no incluye ese dato, por lo que hoy no hay forma de obtenerlo automaticamente.
      */
-    private ComprobanteData fetchComprobanteIfAvailable(
+    private String fetchComprobanteIfAvailable(
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             AppProperties.ProviderProperties provider) {
@@ -135,12 +153,10 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
         if (!comprobanteResponse.isApproved()) {
             return null;
         }
-        return new ComprobanteData(
-                stringValue(comprobanteResponse.getPayload(), "comprobante_b64"),
-                stringValue(comprobanteResponse.getPayload(), "content_type"));
+        return stringValue(comprobanteResponse.getPayload(), "comprobante_b64");
     }
 
-    private VerifyResponse buildResponse(BaseTransactionRequest request, ExternalTransactionResponse externalResponse, ComprobanteData comprobante) {
+    private VerifyResponse buildResponse(BaseTransactionRequest request, ExternalTransactionResponse externalResponse, String comprobanteB64) {
         Map<String, Object> payload = externalResponse.getPayload();
         boolean isError = !externalResponse.isApproved();
 
@@ -161,9 +177,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
                 .ticketStatus(stringValue(payload, "ticket_status"))
                 .winner(getBooleanValue(payload, "is_winner"))
                 .prizeAmount(decimalValue(payload, "prize_amount"))
-                .comprobanteUrl(comprobante != null
-                        ? comprobanteUrlService.storeAndBuildUrl(comprobante.base64(), comprobante.contentType())
-                        : null);
+                .comprobanteUrl(comprobanteUrlService.storeAndBuildUrl(comprobanteB64));
 
         if (isError) {
             builder.error(ErrorDetail.builder()

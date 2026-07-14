@@ -364,7 +364,6 @@ public class Pega3WebClientAdapter implements
         if (!isError) {
             payload.put("comprobante_b64", response.getBase64());
             payload.put("file_name", response.getFileName());
-            payload.put("content_type", response.getContentType());
         }
 
         return ExternalTransactionResponse.builder()

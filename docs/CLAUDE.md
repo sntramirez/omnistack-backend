@@ -44,6 +44,7 @@ POST /v1/execute              → Ejecutar la transacción
 POST /v1/verify               → Verificar resultado post-execute
 POST /v1/reverse              → Reversar / anular transacción
 POST /v1/conciliate           → Conciliación (PENDIENTE — sin spec aún)
+GET  /v1/admin/item-config/{rmsItemCode}  → Diagnostico de parametrizacion (todas las tablas, clasf. por campo y tabla)
 ```
 
 ### Campos de contexto obligatorios en TODOS los endpoints (request y response)

@@ -93,8 +93,7 @@ public class LoteriaTradicionalVerifyStrategy extends AbstractProviderStrategy i
                 .serviceProviderCode(request.getServiceProviderCode()).rmsItemCode(request.getRmsItemCode())
                 .errorFlag(isError)
                 .authorization(request.getAuthorization())
-                .comprobanteUrl(comprobanteUrlService.storeAndBuildUrl(
-                        stringValue(payload, "comprobante_b64"), stringValue(payload, "content_type")));
+                .comprobanteUrl(comprobanteUrlService.storeAndBuildUrl(stringValue(payload, "comprobante_b64")));
 
         if (isError) {
             builder.error(ErrorDetail.builder()
