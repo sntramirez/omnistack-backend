@@ -102,6 +102,8 @@ GET  /v1/admin/item-config/{rmsItemCode}  → Diagnostico de parametrizacion (to
 - **Auth:** LOGIN interno (POST `/api/Ventas/Login`) → devuelve `token`. OmniStack gestiona la sesión.
 - **Flujo CASH_IN:** `LOGIN` → `PRECHECK(RecargarBet593)` → `EXECUTE(ConfirmarBet593)` → `VERIFY(ValidarBet593)` → `[REVERSE(ReversarBet593)]`
 - **Flujo CASH_OUT:** `LOGIN` → `PRECHECK(ConsultarRetiroBet593)` → `EXECUTE(RetirarBet593)` → `VERIFY(ConsultarRetiro)` → `[REVERSE(ReversarRetiroBet593)]`
+- **Catálogo QA:** CASH_IN: `category_code=983, subcategory_code=1120, service_provider_code=408403, rms_item_code=100708850`; CASH_OUT: `category_code=983, subcategory_code=1121, service_provider_code=408403, rms_item_code=100708848`
+- **Nota:** `subcategory_code` NO se valida en `validateBusinessContext()` — el proveedor `loteria` tiene dos subcategorías (1120 CI, 1121 CO) y `IN_OMNI_PROVEEDOR_CONFIG` solo almacena una. El routing por 4 campos del catálogo ya lo garantiza.
 - **CRÍTICO — campos que deben persistirse en sesión:**
   - CASH_IN: `recargaid` + `serialnumber` (del PRECHECK response) → OBLIGATORIOS en EXECUTE/VERIFY/REVERSE
   - CASH_OUT: `ordenPagoId` (del EXECUTE response) → OBLIGATORIO en VERIFY/REVERSE
