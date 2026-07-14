@@ -77,8 +77,9 @@ public class CreateTicketResponse extends BaseTransactionResponse {
             + "debe reenviarse tal cual en EXECUTE para vender los numeros aqui reservados")
     private String reservaId;
 
-    @Schema(example = "1.00", description = "Precio de venta al publico (pvp) del sorteo consultado "
-            + "(solo Tradicionales) — usar amount = precio x cantidad de boletos en EXECUTE")
+    @Schema(example = "2.00", description = "Precio TOTAL ya calculado de todas las combinaciones reservadas "
+            + "(solo Tradicionales) — suma de available_numbers[].precio, proporcional a las fracciones "
+            + "realmente reservadas por numero. Usar tal cual como amount en EXECUTE, sin recalcular.")
     private java.math.BigDecimal precio;
 
     @Data
@@ -100,5 +101,10 @@ public class CreateTicketResponse extends BaseTransactionResponse {
 
         @JsonProperty("fracciones")
         private String fracciones;
+
+        @Schema(example = "1.00", description = "Precio de este numero, ya proporcional a las fracciones "
+                + "reservadas (pvp/cantidadFraccion x reserva). Para juegos sin fraccionamiento (ej. Pozo "
+                + "Millonario), es pvp x reserva.")
+        private java.math.BigDecimal precio;
     }
 }

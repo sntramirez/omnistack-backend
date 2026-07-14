@@ -100,19 +100,23 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 request, provider, juegoId, drawId, combinacion, figuraId, sugerir, registros, cantidadFracciones, numerosUrl);
 
         ExternalTransactionResponse revanchaNumerosResponse = null;
-        java.math.BigDecimal precio = null;
+        SorteoPricing mainPricing = null;
+        SorteoPricing revanchaPricing = null;
         if (sorteosUrl != null && !sorteosUrl.isBlank()) {
             ExternalTransactionResponse sorteosResponse = querySorteos(request, provider, juegoId, sorteosUrl);
-            precio = findPrecio(sorteosResponse, drawId);
+            mainPricing = findSorteoPricing(sorteosResponse, drawId);
             RevanchaInfo revanchaInfo = findRevanchaInfo(sorteosResponse, drawId);
             if (revanchaInfo != null) {
                 revanchaNumerosResponse = queryNumeros(
                         request, provider, revanchaInfo.juegoRevanchaId(), revanchaInfo.sorteoRevanchaId(),
                         combinacion, figuraId, sugerir, registros, cantidadFracciones, numerosUrl);
+                ExternalTransactionResponse revanchaSorteosResponse = querySorteos(
+                        request, provider, revanchaInfo.juegoRevanchaId(), sorteosUrl);
+                revanchaPricing = findSorteoPricing(revanchaSorteosResponse, revanchaInfo.sorteoRevanchaId());
             }
         }
 
-        return buildResponse(request, numerosResponse, revanchaNumerosResponse, precio);
+        return buildResponse(request, numerosResponse, revanchaNumerosResponse, mainPricing, revanchaPricing);
     }
 
     private ExternalTransactionResponse querySorteos(
@@ -153,8 +157,13 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
     private record RevanchaInfo(String juegoRevanchaId, String sorteoRevanchaId) {
     }
 
+    /** pvp = precio del entero completo; cantidadFraccion = cuantas fracciones componen ese entero
+     * (0 o null en juegos sin fraccionamiento, ej. Pozo Millonario). */
+    private record SorteoPricing(java.math.BigDecimal pvp, Integer cantidadFraccion) {
+    }
+
     @SuppressWarnings("unchecked")
-    private java.math.BigDecimal findPrecio(ExternalTransactionResponse sorteosResponse, String drawId) {
+    private SorteoPricing findSorteoPricing(ExternalTransactionResponse sorteosResponse, String sorteoId) {
         if (sorteosResponse == null || !sorteosResponse.isApproved() || sorteosResponse.getPayload() == null) {
             return null;
         }
@@ -165,10 +174,51 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
         return list.stream()
                 .filter(s -> s instanceof TradicionalSorteosQueryResponse.Sorteo)
                 .map(s -> (TradicionalSorteosQueryResponse.Sorteo) s)
-                .filter(sorteo -> drawId.equals(sorteo.getSorteoId()))
-                .map(TradicionalSorteosQueryResponse.Sorteo::getPrecio)
+                .filter(sorteo -> sorteoId.equals(sorteo.getSorteoId()))
                 .findFirst()
+                .map(sorteo -> new SorteoPricing(sorteo.getPrecio(), sorteo.getCantidadFraccion()))
                 .orElse(null);
+    }
+
+    /** Precio de un numero, proporcional a las fracciones realmente reservadas por el proveedor
+     * (campo "reserva" de RecuperarNumerosDisponiblesPorCombinacion), no a las solicitadas. */
+    private static java.math.BigDecimal computeNumeroPrecio(SorteoPricing pricing, String reservaStr) {
+        if (pricing == null || pricing.pvp() == null) {
+            return null;
+        }
+        Integer reserva = parseIntOrNull(reservaStr);
+        int cantidad = reserva != null ? reserva : 1;
+        java.math.BigDecimal precioUnitario = (pricing.cantidadFraccion() != null && pricing.cantidadFraccion() > 0)
+                ? pricing.pvp().divide(java.math.BigDecimal.valueOf(pricing.cantidadFraccion()), 10, java.math.RoundingMode.HALF_UP)
+                : pricing.pvp();
+        return precioUnitario.multiply(java.math.BigDecimal.valueOf(cantidad))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    private static Integer parseIntOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static java.math.BigDecimal sumPrecios(List<CreateTicketResponse.TradicionalNumber> numbers) {
+        if (numbers == null || numbers.isEmpty()) {
+            return null;
+        }
+        java.math.BigDecimal total = java.math.BigDecimal.ZERO;
+        boolean anyPrecio = false;
+        for (CreateTicketResponse.TradicionalNumber n : numbers) {
+            if (n.getPrecio() != null) {
+                total = total.add(n.getPrecio());
+                anyPrecio = true;
+            }
+        }
+        return anyPrecio ? total.setScale(2, java.math.RoundingMode.HALF_UP) : null;
     }
 
     @SuppressWarnings("unchecked")
@@ -192,7 +242,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
     }
 
     @SuppressWarnings("unchecked")
-    private List<CreateTicketResponse.TradicionalNumber> mapNumeros(ExternalTransactionResponse numerosResp) {
+    private List<CreateTicketResponse.TradicionalNumber> mapNumeros(ExternalTransactionResponse numerosResp, SorteoPricing pricing) {
         if (numerosResp == null || !numerosResp.isApproved() || numerosResp.getPayload() == null) {
             return null;
         }
@@ -211,6 +261,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                             .sorteoId(num.getSorteoId())
                             .boleto(num.getBoleto())
                             .fracciones(num.getFracciones())
+                            .precio(computeNumeroPrecio(pricing, num.getReserva()))
                             .build();
                 }).collect(Collectors.toList());
     }
@@ -219,12 +270,13 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
             BaseTransactionRequest request,
             ExternalTransactionResponse numerosResp,
             ExternalTransactionResponse revanchaNumerosResp,
-            java.math.BigDecimal precio) {
+            SorteoPricing mainPricing,
+            SorteoPricing revanchaPricing) {
 
         boolean isError = numerosResp == null || !numerosResp.isApproved();
 
-        List<CreateTicketResponse.TradicionalNumber> availableNumbers = mapNumeros(numerosResp);
-        List<CreateTicketResponse.TradicionalNumber> revanchaNumbers = mapNumeros(revanchaNumerosResp);
+        List<CreateTicketResponse.TradicionalNumber> availableNumbers = mapNumeros(numerosResp, mainPricing);
+        List<CreateTicketResponse.TradicionalNumber> revanchaNumbers = mapNumeros(revanchaNumerosResp, revanchaPricing);
         if (revanchaNumbers != null && !revanchaNumbers.isEmpty()) {
             if (availableNumbers == null) {
                 availableNumbers = new java.util.ArrayList<>();
@@ -233,6 +285,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
             }
             availableNumbers.addAll(revanchaNumbers);
         }
+        java.math.BigDecimal precio = sumPrecios(availableNumbers);
         Integer totalNumbers = numerosResp != null && numerosResp.getPayload() != null
                 && numerosResp.getPayload().get("totalResults") instanceof Integer intTotal
                 ? intTotal : null;
