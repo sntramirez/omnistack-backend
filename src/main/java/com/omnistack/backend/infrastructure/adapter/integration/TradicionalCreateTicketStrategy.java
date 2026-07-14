@@ -157,8 +157,10 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
     private record RevanchaInfo(String juegoRevanchaId, String sorteoRevanchaId) {
     }
 
-    /** pvp = precio del entero completo; cantidadFraccion = cuantas fracciones componen ese entero
-     * (0 o null en juegos sin fraccionamiento, ej. Pozo Millonario). */
+    /** pvp = precio de venta al publico por unidad/fraccion (confirmado en el spec: respuesta de
+     * VentaBoletos, "Valor: Decimal — Valor total (pvp*cantidad)", es multiplicacion directa sin
+     * dividir). cantidadFraccion = cuantas fracciones componen un entero (0/null en juegos sin
+     * fraccionamiento, ej. Pozo Millonario) — solo informativo, no participa en el precio. */
     private record SorteoPricing(java.math.BigDecimal pvp, Integer cantidadFraccion) {
     }
 
@@ -178,46 +180,6 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 .findFirst()
                 .map(sorteo -> new SorteoPricing(sorteo.getPrecio(), sorteo.getCantidadFraccion()))
                 .orElse(null);
-    }
-
-    /** Precio de un numero: "Valor total (pvp*cantidad)" segun el spec (respuesta VentaBoletos,
-     * listaR[].Valor) — pvp ya es el precio por unidad/fraccion, NO el precio del entero completo;
-     * no se divide por cantidadFraccion. "cantidad" = fracciones/boletos realmente reservados
-     * (campo "reserva" de RecuperarNumerosDisponiblesPorCombinacion), no las solicitadas. */
-    private static java.math.BigDecimal computeNumeroPrecio(SorteoPricing pricing, String reservaStr) {
-        if (pricing == null || pricing.pvp() == null) {
-            return null;
-        }
-        Integer reserva = parseIntOrNull(reservaStr);
-        int cantidad = reserva != null ? reserva : 1;
-        return pricing.pvp().multiply(java.math.BigDecimal.valueOf(cantidad))
-                .setScale(2, java.math.RoundingMode.HALF_UP);
-    }
-
-    private static Integer parseIntOrNull(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            return Integer.valueOf(value.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private static java.math.BigDecimal sumPrecios(List<CreateTicketResponse.TradicionalNumber> numbers) {
-        if (numbers == null || numbers.isEmpty()) {
-            return null;
-        }
-        java.math.BigDecimal total = java.math.BigDecimal.ZERO;
-        boolean anyPrecio = false;
-        for (CreateTicketResponse.TradicionalNumber n : numbers) {
-            if (n.getPrecio() != null) {
-                total = total.add(n.getPrecio());
-                anyPrecio = true;
-            }
-        }
-        return anyPrecio ? total.setScale(2, java.math.RoundingMode.HALF_UP) : null;
     }
 
     @SuppressWarnings("unchecked")
@@ -260,7 +222,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                             .sorteoId(num.getSorteoId())
                             .boleto(num.getBoleto())
                             .fracciones(num.getFracciones())
-                            .precio(computeNumeroPrecio(pricing, num.getReserva()))
+                            .precioUnitario(pricing != null ? pricing.pvp() : null)
                             .build();
                 }).collect(Collectors.toList());
     }
@@ -284,7 +246,6 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
             }
             availableNumbers.addAll(revanchaNumbers);
         }
-        java.math.BigDecimal precio = sumPrecios(availableNumbers);
         Integer totalNumbers = numerosResp != null && numerosResp.getPayload() != null
                 && numerosResp.getPayload().get("totalResults") instanceof Integer intTotal
                 ? intTotal : null;
@@ -297,8 +258,7 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 .categoryCode(request.getCategoryCode()).subcategoryCode(request.getSubcategoryCode())
                 .serviceProviderCode(request.getServiceProviderCode()).rmsItemCode(request.getRmsItemCode())
                 .errorFlag(isError)
-                .availableNumbers(availableNumbers).totalNumbers(totalNumbers).reservaId(reservaId)
-                .precio(precio);
+                .availableNumbers(availableNumbers).totalNumbers(totalNumbers).reservaId(reservaId);
 
         if (isError) {
             builder.error(ErrorDetail.builder()
