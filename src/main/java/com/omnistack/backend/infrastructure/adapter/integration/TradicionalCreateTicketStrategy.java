@@ -180,18 +180,17 @@ public class TradicionalCreateTicketStrategy extends AbstractProviderStrategy im
                 .orElse(null);
     }
 
-    /** Precio de un numero, proporcional a las fracciones realmente reservadas por el proveedor
-     * (campo "reserva" de RecuperarNumerosDisponiblesPorCombinacion), no a las solicitadas. */
+    /** Precio de un numero: "Valor total (pvp*cantidad)" segun el spec (respuesta VentaBoletos,
+     * listaR[].Valor) — pvp ya es el precio por unidad/fraccion, NO el precio del entero completo;
+     * no se divide por cantidadFraccion. "cantidad" = fracciones/boletos realmente reservados
+     * (campo "reserva" de RecuperarNumerosDisponiblesPorCombinacion), no las solicitadas. */
     private static java.math.BigDecimal computeNumeroPrecio(SorteoPricing pricing, String reservaStr) {
         if (pricing == null || pricing.pvp() == null) {
             return null;
         }
         Integer reserva = parseIntOrNull(reservaStr);
         int cantidad = reserva != null ? reserva : 1;
-        java.math.BigDecimal precioUnitario = (pricing.cantidadFraccion() != null && pricing.cantidadFraccion() > 0)
-                ? pricing.pvp().divide(java.math.BigDecimal.valueOf(pricing.cantidadFraccion()), 10, java.math.RoundingMode.HALF_UP)
-                : pricing.pvp();
-        return precioUnitario.multiply(java.math.BigDecimal.valueOf(cantidad))
+        return pricing.pvp().multiply(java.math.BigDecimal.valueOf(cantidad))
                 .setScale(2, java.math.RoundingMode.HALF_UP);
     }
 

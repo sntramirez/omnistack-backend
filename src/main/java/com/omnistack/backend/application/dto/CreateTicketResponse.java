@@ -102,9 +102,8 @@ public class CreateTicketResponse extends BaseTransactionResponse {
         @JsonProperty("fracciones")
         private String fracciones;
 
-        @Schema(example = "1.00", description = "Precio de este numero, ya proporcional a las fracciones "
-                + "reservadas (pvp/cantidadFraccion x reserva). Para juegos sin fraccionamiento (ej. Pozo "
-                + "Millonario), es pvp x reserva.")
+        @Schema(example = "1.00", description = "Precio de este numero: pvp x cantidad de fracciones/boletos "
+                + "realmente reservados (\"reserva\"). pvp ya es el precio por unidad, no del entero completo.")
         private java.math.BigDecimal precio;
     }
 }
