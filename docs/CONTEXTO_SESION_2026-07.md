@@ -277,18 +277,34 @@ respuesta REAL de QA de `ConsultarTicket`/`CrearTicket` traiga este dato bajo ot
 documentado. **Falta un log real de QA de esos dos endpoints para confirmar o descartar** —
 pedido al usuario, sin respuesta aún al cierre de esta sesión.
 
-### 9.6 Verificación
+### 9.6 `game_data.entry_types` filtrado a solo `Verbal-*` (aclaración pedida en reunión)
+
+Pregunta de negocio: por qué `entry_types` trae 4 valores (`Playslip-Manual`, `Playslip-QuickPick`,
+`Verbal-Manual`, `Verbal-QuickPick`) y cuál debería usar el front. Cruzado contra
+`docs/GPFEC-3477 Recaudo Lotería - Negocio.pdf` (RF-07/CU-04, Venta de Pega): el documento
+funcional solo describe un flujo — el cajero digita los dígitos o pide "número aleatorio" — nunca
+menciona papeleta física de autoservicio. Es decir, el eje `Playslip` vs `Verbal` del proveedor no
+tiene ningún equivalente en GEOPos; solo aplica `Verbal` (`Manual`=dígitos, `QuickPick`=aleatorio).
+
+**Fix**: `Pega3WebClientAdapter.queryProduct()` ahora filtra `response.getEntryTypes()` a solo los
+que empiezan con `"Verbal-"` antes de construir `entry_types` y antes de tomar el "primero" para
+`max_cost`/`future_draws_limit`/`advance_draw_limit`/`play_types` (antes tomaba el primero de la
+lista cruda del proveedor, que podía ser un `Playslip-*`). `game_data.entry_types` ahora solo
+expone `["Verbal-Manual", "Verbal-QuickPick"]`.
+
+### 9.7 Verificación
 
 `mvn compile` + `mvn test` en verde (126/126) después de cada cambio de esta sección. Sin tests
 unitarios dedicados para `LoteriaTradicionalExecuteStrategy`, `TradicionalCreateTicketStrategy`
 ni `LoteriaPega3ExecuteStrategy` — por eso el bug de 9.3 nunca se detectó en CI pese a llevar
 tiempo en el código. Pendiente si se retoma el patrón de tests del plan de CASH_OUT.
 
-### 9.7 Postman v10
+### 9.8 Postman v10
 
 `docs/OmniStack_postman_collection_v10.json` actualizado: ejemplos de PRECHECK/CREATE_TICKET/
 EXECUTE de Pozzo Millonario con todos los campos nuevos de 9.1-9.3 (incluye `figura_id` en el
-request de CREATE_TICKET y `numero3` real por boleto según el ejemplo del proveedor), y ejemplo
-de EXECUTE de Pega3 CASH_IN corregido para reflejar 9.4. Changelog completo también agregado a
-la descripción de la carpeta "📌 NOTAS v10" del propio JSON. Validado con `json.load` en cada
-edición.
+request de CREATE_TICKET y `numero3` real por boleto según el ejemplo del proveedor), ejemplo
+de EXECUTE de Pega3 CASH_IN corregido para reflejar 9.4, y `game_data.entry_types` de las 3
+carpetas Pega (Pega3/Pega4/Pega2) filtrado a `["Verbal-Manual","Verbal-QuickPick"]` para reflejar
+9.6. Changelog completo también agregado a la descripción de la carpeta "📌 NOTAS v10" del propio
+JSON. Validado con `json.load` en cada edición.

@@ -103,10 +103,21 @@ public class Pega3WebClientAdapter implements
                 operationPath, provider, request, Pega3ProductQueryResponse.class,
                 "queryProduct", "consulta producto Pega3", command.getUuid(), WS_KEY_PRECHECK);
 
+        // El proveedor trae 4 entryTypes (Playslip-Manual/QuickPick, Verbal-Manual/QuickPick) —
+        // "Playslip" es el canal de papeleta fisica de autoservicio, que GEOPos no tiene (confirmado
+        // contra docs/GPFEC-3477 Recaudo Loteria - Negocio.pdf, RF-07/CU-04: el cajero solo digita
+        // numeros o pide "numero aleatorio", nunca papeleta). Se filtra a solo "Verbal-*" antes de
+        // exponer al POS, para no ofrecer una opcion que no corresponde a ningun flujo real.
+        List<Pega3ProductQueryResponse.EntryType> verbalEntryTypes = response.getEntryTypes() == null
+                ? List.of()
+                : response.getEntryTypes().stream()
+                        .filter(et -> et.getCode() != null && et.getCode().startsWith("Verbal-"))
+                        .toList();
+
         Map<String, Object> payload = new LinkedHashMap<>();
         boolean isError = hasError(response.getMessage());
         payload.put("message", response.getMessage());
-        payload.put("entry_types", response.getEntryTypes() == null ? null : response.getEntryTypes().stream()
+        payload.put("entry_types", verbalEntryTypes.stream()
                 .map(Pega3ProductQueryResponse.EntryType::getCode)
                 .toList());
         payload.put("bet_amount_options", parseBetAmountOptions(response.getBetAmountOptions()));
@@ -115,10 +126,9 @@ public class Pega3WebClientAdapter implements
         payload.put("prize_liability_threshold", response.getPrizeLiabilityThreshold());
 
         // Los limites (maxWager, futureDrawsLimit, advanceDrawLimit, playTypes) vienen anidados
-        // por modalidad de entrada (entryTypes[]); se toma el primero como representativo, igual
-        // que ya se hacia con minCost a nivel plano.
-        Pega3ProductQueryResponse.EntryType firstEntryType = response.getEntryTypes() != null && !response.getEntryTypes().isEmpty()
-                ? response.getEntryTypes().get(0) : null;
+        // por modalidad de entrada (entryTypes[]); se toma el primero de los Verbal-* como
+        // representativo, igual que ya se hacia con minCost a nivel plano.
+        Pega3ProductQueryResponse.EntryType firstEntryType = verbalEntryTypes.isEmpty() ? null : verbalEntryTypes.get(0);
         if (firstEntryType != null) {
             payload.put("max_cost", firstEntryType.getMaxWager());
             payload.put("future_draws_limit", firstEntryType.getFutureDrawsLimit());
