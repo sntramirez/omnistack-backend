@@ -274,8 +274,22 @@ manda, `comprobanteUrl` sale `null`, sin error.
 
 Dado el patrón de esta sesión (9.3 y el fix de `fechaCierreVenta`), es muy probable que la
 respuesta REAL de QA de `ConsultarTicket`/`CrearTicket` traiga este dato bajo otro nombre no
-documentado. **Falta un log real de QA de esos dos endpoints para confirmar o descartar** —
-pedido al usuario, sin respuesta aún al cierre de esta sesión.
+documentado. **Falta un log real de QA de esos dos endpoints para confirmar o descartar**.
+
+**Bug encontrado al intentar verificarlo**: `Pega3WebClientAdapter.invokePega3()` parseaba el
+body a la clase `T` (`Pega3VerifyTicketResponse`, etc.) **dentro** de la cadena reactiva, y
+logueaba (tanto a consola como a `IN_OMNI_LOGS_WS_EXT`) la re-serialización de ese DTO ya
+recortado — no el JSON crudo del proveedor. Cualquier campo no modelado en nuestros DTOs de
+Pega3 (como un eventual `transaccion`) se perdía silenciosamente antes de llegar a cualquier log,
+haciendo imposible depurarlo así se pidiera el log 10 veces. `TradicionalWebClientAdapter` no
+tiene este problema — ya loguea el string crudo antes de parsear (`invokePost(String)`), por eso
+ahí sí pudimos encontrar `listaVentaSuerte` etc. en 9.3.
+
+✅ Corregido: `invokePega3()` ahora captura el body crudo (`bodyToMono(String.class)`), lo loguea
+tal cual (consola + `IN_OMNI_LOGS_WS_EXT`) y recién después lo parsea a `T` — mismo patrón que
+Tradicionales. Aplica a **todas** las llamadas de Pega3 (VentaProductos, ObtieneSorteosActivo,
+CrearTicket, PagarTicket, ConsultarTicket, CancelarTicket), no solo VERIFY. Pendiente: pedir logs
+nuevos al usuario con este fix ya desplegado para poder finalmente inspeccionar el JSON real.
 
 ### 9.6 `game_data.entry_types` filtrado a solo `Verbal-*` (aclaración pedida en reunión)
 

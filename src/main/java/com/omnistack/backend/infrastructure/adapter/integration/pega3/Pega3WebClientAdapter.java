@@ -437,9 +437,14 @@ public class Pega3WebClientAdapter implements
         String requestJson = JsonUtil.toJsonSilently(request);
         traceToConsole("Pega3 " + logOperation + " request", url, requestJson);
 
-        T response;
+        // Se captura el body crudo del proveedor ANTES de parsearlo a la clase T — igual patron
+        // que TradicionalWebClientAdapter.invokePost(). Antes se mapeaba a T dentro de la propia
+        // cadena reactiva y se logueaba la re-serializacion de T (no el JSON real del proveedor),
+        // lo que ocultaba silenciosamente cualquier campo que el proveedor mandara y no estuviera
+        // ya modelado en el DTO — imposible depurar campos no documentados de esta forma.
+        String rawBody;
         try {
-            response = providerCircuitBreaker.execute(PROVIDER_KEY, () ->
+            rawBody = providerCircuitBreaker.execute(PROVIDER_KEY, () ->
                     omnistackWebClient.post()
                             .uri(url)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -467,7 +472,6 @@ public class Pega3WebClientAdapter implements
                                         return Mono.error(new IntegrationException(errMsg));
                                     }))
                             .bodyToMono(String.class)
-                            .map(body -> parseResponse(body, responseType, errorOperation))
                             .block());
         } catch (WebClientRequestException exception) {
             traceErrorToConsole("Pega3 " + logOperation + " transport error", url, rootCauseMessage(exception));
@@ -486,23 +490,19 @@ public class Pega3WebClientAdapter implements
             throw new IntegrationException(errMsg, exception);
         }
 
-        if (response == null) {
-            throw new IntegrationException("Pega3 no retorno contenido para " + errorOperation);
-        }
-
-        String responseJson = JsonUtil.toJsonSilently(response);
-        traceToConsole("Pega3 " + logOperation + " response", url, responseJson);
+        traceToConsole("Pega3 " + logOperation + " response", url, rawBody);
         wsExtLogService.log(ProviderCallLog.builder()
                 .uuid(uuid)
                 .providerKey(PROVIDER_KEY)
                 .wsKey(wsKey)
                 .url(url)
                 .requestJson(requestJson)
-                .responseJson(responseJson)
+                .responseJson(rawBody)
                 .durationMs(System.currentTimeMillis() - startMs)
                 .isError(false)
                 .build());
-        return response;
+
+        return parseResponse(rawBody, responseType, errorOperation);
     }
 
     private Pega3CreateTicketRequest.MainGame buildMainGame(Pega3CreateTicketCommand command) {
