@@ -307,8 +307,11 @@ public class TradicionalWebClientAdapter implements
         if (primerTicket != null) {
             payload.put("boletoClave", primerTicket.getClave());
             payload.put("boletoQr", primerTicket.getCodigoQR());
+            payload.put("boletoId", primerTicket.getBoleto());
+            payload.put("valorTotalVendido", primerTicket.getValorTotalNumeroVendido());
             if (primerTicket.getListaNumeroFracciones() != null && !primerTicket.getListaNumeroFracciones().isEmpty()) {
                 payload.put("fraccionesVendidas", primerTicket.getListaNumeroFracciones().get(0).getNumeroFraccion());
+                payload.put("fraccionesVendidasDetalle", primerTicket.getListaNumeroFracciones());
             }
         }
 
