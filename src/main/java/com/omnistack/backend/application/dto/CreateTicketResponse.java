@@ -83,6 +83,14 @@ public class CreateTicketResponse extends BaseTransactionResponse {
     @AllArgsConstructor
     public static class TradicionalNumber {
         private String numero;
+
+        @Schema(description = "Segunda parte de la combinacion cuando el juego la usa (ej. Pozo Millonario: "
+                + "digitos de la combinacion secundaria/mascota) — null si el juego no la tiene")
+        private String numero2;
+        private String numero3;
+        private String numero4;
+        private String numero5;
+
         private String figura;
 
         @JsonProperty("game_id")
@@ -96,6 +104,13 @@ public class CreateTicketResponse extends BaseTransactionResponse {
 
         @JsonProperty("fracciones")
         private String fracciones;
+
+        @Schema(description = "Cantidad de fracciones/unidades solicitadas en la busqueda")
+        private String cantidad;
+
+        @Schema(description = "Cantidad de fracciones/unidades que el proveedor realmente reservo para este "
+                + "numero — puede diferir de lo solicitado")
+        private String reserva;
 
         @JsonProperty("precio_unitario")
         @Schema(example = "1.00", description = "Precio por unidad/fraccion (pvp) del sorteo al que pertenece "
