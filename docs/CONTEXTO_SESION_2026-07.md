@@ -288,8 +288,36 @@ ahí sí pudimos encontrar `listaVentaSuerte` etc. en 9.3.
 ✅ Corregido: `invokePega3()` ahora captura el body crudo (`bodyToMono(String.class)`), lo loguea
 tal cual (consola + `IN_OMNI_LOGS_WS_EXT`) y recién después lo parsea a `T` — mismo patrón que
 Tradicionales. Aplica a **todas** las llamadas de Pega3 (VentaProductos, ObtieneSorteosActivo,
-CrearTicket, PagarTicket, ConsultarTicket, CancelarTicket), no solo VERIFY. Pendiente: pedir logs
-nuevos al usuario con este fix ya desplegado para poder finalmente inspeccionar el JSON real.
+CrearTicket, PagarTicket, ConsultarTicket, CancelarTicket), no solo VERIFY.
+
+**Resultado con el fix ya desplegado**: con el body crudo real a la vista, se confirmó que
+`ConsultarTicket` **no trae `transaccion` bajo ningún nombre** — la respuesta real completa es
+`{gameTicketNumber, status, createdOn, cost, mainGame{...}, promotions, entryType, channel}`.
+`CrearTicket` tampoco lo trae. Se descarta definitivamente que sea un problema de mapeo — el dato
+genuinamente no existe en ninguna respuesta documentada ni real de estos 2 endpoints.
+
+**Hallazgo colateral valioso**: `CrearTicket` sí devuelve `codigoQR` (URL del código QR del
+ticket vendido) — campo que **no estaba modelado** en `Pega3CreateTicketResponse.java` y se
+descartaba en silencio por `@JsonIgnoreProperties(ignoreUnknown=true)`. `ConsultarTicket` (VERIFY)
+nunca lo trae. ✅ Corregido: se agregó `codigoQR` al DTO, se captura en el payload como
+`ticket_qr` (`Pega3WebClientAdapter.createTicket()`) y se expone en
+`CreateTicketResponse.ticket_qr` (mapeado en `LoteriaPega3CreateTicketStrategy`). Es una URL, no
+una imagen — el POS/impresora debe renderizarla como código de barras QR, a diferencia del
+`comprobante_url` de Tradicionales que sí es un PNG servido por nosotros.
+
+**Fix del `transaccion` — hipótesis implementada, pendiente de confirmar en QA**: dado que
+`transaccion` se documenta como "código de la transacción asociada a la venta", y que OmniStack
+ya manda `customerSessionId = uuid` en cada llamada a Pega3 (incluida `CrearTicket`), se agregó
+`RegistroTrxPort.findCreateTicketUuidByAuthorization(ticketNumber)` — consulta
+`IN_OMNI_REGISTRO_TRX` (que ya guarda `UUID` + `AUTHORIZATION` por cada `CREATE_TICKET`) para
+recuperar el `uuid` que se uso como `customerSessionId` al crear ESE ticket especifico, y lo usa
+como `transaccion` automáticamente en `LoteriaPega3VerifyStrategy.fetchComprobanteIfAvailable()`
+si el POS no lo manda explícito (que sigue teniendo prioridad si viene). **No es un dato
+confirmado por el proveedor** — es la hipótesis más plausible con la evidencia disponible, y solo
+se puede validar probándola contra QA real. Implementado en `RegistroTrxPort` (+ `OracleRegistroTrxAdapter`
++ `NoOpRegistroTrxAdapter`) y `LoteriaPega3VerifyStrategy`. 126/126 tests ✅. **Pendiente**: correr
+el flujo completo (CREATE_TICKET→EXECUTE→VERIFY) y confirmar si `GenerarComprobantePega` acepta
+este valor o lo rechaza.
 
 ### 9.6 `game_data.entry_types` filtrado a solo `Verbal-*` (aclaración pedida en reunión)
 

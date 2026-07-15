@@ -10,6 +10,7 @@ import com.omnistack.backend.application.dto.VerifyRequest;
 import com.omnistack.backend.application.dto.VerifyResponse;
 import com.omnistack.backend.application.port.out.Pega3ComprobanteQueryPort;
 import com.omnistack.backend.application.port.out.Pega3VerifyTicketPort;
+import com.omnistack.backend.application.port.out.RegistroTrxPort;
 import com.omnistack.backend.application.port.out.strategy.AbstractProviderStrategy;
 import com.omnistack.backend.application.port.out.strategy.VerifyStrategy;
 import com.omnistack.backend.application.service.ComprobanteUrlService;
@@ -41,6 +42,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
 
     private final Pega3VerifyTicketPort pega3VerifyTicketPort;
     private final Pega3ComprobanteQueryPort pega3ComprobanteQueryPort;
+    private final RegistroTrxPort registroTrxPort;
     private final ComprobanteUrlService comprobanteUrlService;
     private final ProviderConfigService providerConfigService;
     private final ProviderWsDefsService providerWsDefsService;
@@ -96,14 +98,23 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
 
     /**
      * Genera el comprobante PDF (GenerarComprobantePega) solo si la operacion esta configurada
-     * y el request trae "transaccion" — la respuesta de ConsultarTicket/CrearTicket de Pega3
-     * no incluye ese dato, por lo que hoy no hay forma de obtenerlo automaticamente.
+     * y hay un valor disponible para "transaccion". La respuesta de ConsultarTicket/CrearTicket
+     * de Pega3 no incluye ese dato (confirmado contra QA real, 2026-07-15) — se usa el mismo
+     * valor de uuid que se envio como customerSessionId al crear el ticket (persistido en
+     * IN_OMNI_REGISTRO_TRX por CREATE_TICKET, recuperado aqui por ticketNumber/authorization)
+     * como candidato, ya que "transaccion" se documenta como "codigo de la transaccion asociada
+     * a la venta" — es una hipotesis pendiente de confirmar en QA, no un dato oficial del
+     * proveedor. El POS puede seguir enviando "transaccion" explicito en el request, que tiene
+     * prioridad sobre este fallback.
      */
     private ComprobanteData fetchComprobanteIfAvailable(
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             AppProperties.ProviderProperties provider) {
         String transaccion = request instanceof VerifyRequest verifyRequest ? verifyRequest.getTransaccion() : null;
+        if (transaccion == null || transaccion.isBlank()) {
+            transaccion = registroTrxPort.findCreateTicketUuidByAuthorization(request.getAuthorization()).orElse(null);
+        }
         if (transaccion == null || transaccion.isBlank()) {
             return null;
         }
