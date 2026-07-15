@@ -218,6 +218,7 @@ public class Pega3WebClientAdapter implements
         payload.put("draw_date", response.getDrawDate());
         payload.put("status", response.getStatus());
         payload.put("authorization", response.getGameTicketNumber());
+        payload.put("ticket_qr", response.getCodigoQR());
 
         return ExternalTransactionResponse.builder()
                 .approved(!isError)

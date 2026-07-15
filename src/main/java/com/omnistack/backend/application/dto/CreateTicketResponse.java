@@ -64,6 +64,12 @@ public class CreateTicketResponse extends BaseTransactionResponse {
     @Schema(example = "TICKET-12345", description = "ticketNumber del proveedor Pega3")
     private String ticketNumber;
 
+    @JsonProperty("ticket_qr")
+    @Schema(example = "https://www8.loteria.com.ec/LNConsultaBoletos/GanadoresLN?cn=TO0119007180211600081357150",
+            description = "URL del codigo QR del ticket, para imprimir en el comprobante (solo Pega3) — "
+                    + "disponible de inmediato aqui, no requiere VERIFY")
+    private String ticketQr;
+
     @JsonProperty("available_numbers")
     @Schema(description = "Combinaciones encontradas/reservadas (solo Tradicionales)")
     private List<TradicionalNumber> availableNumbers;
