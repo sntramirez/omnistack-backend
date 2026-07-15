@@ -1,5 +1,6 @@
 package com.omnistack.backend.infrastructure.adapter.integration.tradicional.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
@@ -45,7 +46,10 @@ public class TradicionalSorteosQueryResponse {
         @JsonProperty("fechaSorteo")
         private String fecha;
 
-        @JsonProperty("fechaCierreVentas")
+        /** El spec documenta "fechaCierreVentas" (plural) pero el proveedor real en QA
+         * manda "fechaCierreVenta" (singular) — se acepta cualquiera de los dos. */
+        @JsonProperty("fechaCierreVenta")
+        @JsonAlias("fechaCierreVentas")
         private String fechaCierreVentas;
 
         @JsonProperty("seAcumula")
