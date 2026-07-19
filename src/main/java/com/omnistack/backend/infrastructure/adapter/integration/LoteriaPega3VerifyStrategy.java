@@ -91,7 +91,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
 
         String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
         ExternalTransactionResponse externalResponse = pega3VerifyTicketPort.verifyTicket(command, operationUrl, wsKey);
-        List<ComprobanteData> comprobantes = fetchComprobanteIfAvailable(request, serviceDefinition, provider);
+        List<ComprobanteData> comprobantes = fetchComprobanteIfAvailable(request, serviceDefinition, provider, externalResponse);
         return buildResponse(request, externalResponse, comprobantes);
     }
 
@@ -106,14 +106,26 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
      * IN_OMNI_REGISTRO_TRX por CREATE_TICKET, recuperado aqui por ticketNumber/authorization)
      * como candidato, ya que "transaccion" se documenta como "codigo de la transaccion asociada
      * a la venta" — es una hipotesis pendiente de confirmar en QA, no un dato oficial del
-     * proveedor. El POS puede seguir enviando "transaccion" explicito en el request, que tiene
+     * proveedor. El POS puede seguir enviendo "transaccion" explicito en el request, que tiene
      * prioridad sobre este fallback.
+     * <p>
+     * ventaId: el proveedor rechaza con 404 "No existe una venta con el ID proporcionado" si se
+     * usa el ticketNumber completo (el que se genero en CrearTicket, ej.
+     * "TO0119001180246130060911133"). ConsultarTicket devuelve un gameTicketNumber TRUNCADO
+     * (3 caracteres menos, ej. "TO0119001180246130060911") — confirmado contra QA real
+     * (2026-07-19) que es ESE valor truncado el que GenerarComprobantePega espera como ventaId,
+     * no el ticketNumber original que el POS reenvia como authorization.
      */
     @SuppressWarnings("unchecked")
     private List<ComprobanteData> fetchComprobanteIfAvailable(
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
-            AppProperties.ProviderProperties provider) {
+            AppProperties.ProviderProperties provider,
+            ExternalTransactionResponse verifyTicketResponse) {
+        String ventaId = stringValue(verifyTicketResponse.getPayload(), "authorization");
+        if (ventaId == null || ventaId.isBlank()) {
+            ventaId = request.getAuthorization();
+        }
         String transaccion = request instanceof VerifyRequest verifyRequest ? verifyRequest.getTransaccion() : null;
         boolean transaccionExplicita = transaccion != null && !transaccion.isBlank();
         if (!transaccionExplicita) {
@@ -145,7 +157,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
                 .subcategoryCode(request.getSubcategoryCode())
                 .serviceProviderCode(request.getServiceProviderCode())
                 .rmsItemCode(request.getRmsItemCode())
-                .ventaId(request.getAuthorization())
+                .ventaId(ventaId)
                 .idUsuario(provider.getAuth().getLogin().getUsername())
                 .transaccion(transaccion)
                 .puntoDeVenta(request.getStoreName())
