@@ -28,11 +28,13 @@ import com.omnistack.backend.shared.exception.IntegrationException;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
  * Estrategia de VERIFY CASH_IN para Pega3. Llama a ConsultarTicket.
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy implements VerifyStrategy {
@@ -113,16 +115,22 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
             ServiceDefinition serviceDefinition,
             AppProperties.ProviderProperties provider) {
         String transaccion = request instanceof VerifyRequest verifyRequest ? verifyRequest.getTransaccion() : null;
-        if (transaccion == null || transaccion.isBlank()) {
+        boolean transaccionExplicita = transaccion != null && !transaccion.isBlank();
+        if (!transaccionExplicita) {
             transaccion = registroTrxPort.findCreateTicketUuidByAuthorization(request.getAuthorization()).orElse(null);
         }
         if (transaccion == null || transaccion.isBlank()) {
+            log.warn("Pega3 VERIFY sin comprobante: no se encontro 'transaccion' (ni explicito en el request, "
+                    + "ni via IN_OMNI_REGISTRO_TRX por authorization={})", request.getAuthorization());
             return null;
         }
+        log.info("Pega3 VERIFY: transaccion resuelta={} (fuente={})", transaccion, transaccionExplicita ? "request" : "IN_OMNI_REGISTRO_TRX");
         String comprobanteUrl = providerWsService
                 .findUrl(PROVIDER_KEY, toWsKey(VERIFY_COMPROBANTE_KEY, serviceDefinition.getMovementType()))
                 .orElse(null);
         if (comprobanteUrl == null || comprobanteUrl.isBlank()) {
+            log.warn("Pega3 VERIFY sin comprobante: no hay URL configurada para wsKey={}",
+                    toWsKey(VERIFY_COMPROBANTE_KEY, serviceDefinition.getMovementType()));
             return null;
         }
 
