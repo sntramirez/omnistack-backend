@@ -25,6 +25,7 @@ import com.omnistack.backend.domain.model.Pega3ComprobanteQueryCommand;
 import com.omnistack.backend.domain.model.Pega3VerifyTicketCommand;
 import com.omnistack.backend.domain.model.ServiceDefinition;
 import com.omnistack.backend.shared.exception.IntegrationException;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -88,8 +89,8 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
 
         String wsKey = toWsKey(capability.name(), serviceDefinition.getMovementType());
         ExternalTransactionResponse externalResponse = pega3VerifyTicketPort.verifyTicket(command, operationUrl, wsKey);
-        ComprobanteData comprobante = fetchComprobanteIfAvailable(request, serviceDefinition, provider);
-        return buildResponse(request, externalResponse, comprobante);
+        List<ComprobanteData> comprobantes = fetchComprobanteIfAvailable(request, serviceDefinition, provider);
+        return buildResponse(request, externalResponse, comprobantes);
     }
 
     private record ComprobanteData(String base64, String contentType) {
@@ -106,7 +107,8 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
      * proveedor. El POS puede seguir enviando "transaccion" explicito en el request, que tiene
      * prioridad sobre este fallback.
      */
-    private ComprobanteData fetchComprobanteIfAvailable(
+    @SuppressWarnings("unchecked")
+    private List<ComprobanteData> fetchComprobanteIfAvailable(
             BaseTransactionRequest request,
             ServiceDefinition serviceDefinition,
             AppProperties.ProviderProperties provider) {
@@ -145,14 +147,26 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
         if (!comprobanteResponse.isApproved()) {
             return null;
         }
-        return new ComprobanteData(
-                stringValue(comprobanteResponse.getPayload(), "comprobante_b64"),
-                stringValue(comprobanteResponse.getPayload(), "content_type"));
+        Object rawImagenes = comprobanteResponse.getPayload() != null ? comprobanteResponse.getPayload().get("imagenes") : null;
+        if (!(rawImagenes instanceof List<?> list)) {
+            return null;
+        }
+        return list.stream()
+                .filter(i -> i instanceof com.omnistack.backend.infrastructure.adapter.integration.pega3.dto.Pega3ComprobanteResponse.Imagen)
+                .map(i -> (com.omnistack.backend.infrastructure.adapter.integration.pega3.dto.Pega3ComprobanteResponse.Imagen) i)
+                .map(img -> new ComprobanteData(img.getBase64(), img.getContentType()))
+                .collect(java.util.stream.Collectors.toList());
     }
 
-    private VerifyResponse buildResponse(BaseTransactionRequest request, ExternalTransactionResponse externalResponse, ComprobanteData comprobante) {
+    private VerifyResponse buildResponse(BaseTransactionRequest request, ExternalTransactionResponse externalResponse, List<ComprobanteData> comprobantes) {
         Map<String, Object> payload = externalResponse.getPayload();
         boolean isError = !externalResponse.isApproved();
+
+        List<String> comprobanteUrls = comprobantes != null
+                ? comprobantes.stream()
+                        .map(c -> comprobanteUrlService.storeAndBuildUrl(c.base64(), c.contentType()))
+                        .collect(java.util.stream.Collectors.toList())
+                : null;
 
         VerifyResponse.VerifyResponseBuilder<?, ?> builder = VerifyResponse.builder()
                 .chain(request.getChain())
@@ -171,9 +185,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
                 .ticketStatus(stringValue(payload, "ticket_status"))
                 .winner(getBooleanValue(payload, "is_winner"))
                 .prizeAmount(decimalValue(payload, "prize_amount"))
-                .comprobanteUrl(comprobante != null
-                        ? comprobanteUrlService.storeAndBuildUrl(comprobante.base64(), comprobante.contentType())
-                        : null);
+                .comprobanteUrls(comprobanteUrls);
 
         if (isError) {
             builder.error(ErrorDetail.builder()

@@ -592,29 +592,23 @@ public class TradicionalWebClientAdapter implements
         }
         log.info("Tradicionales generateComprobante response url={} summary={}", fullUrl, redactBase64(response));
 
-        TradicionalComprobanteResponse.Imagen primeraImagen = response != null && response.getImagenes() != null && !response.getImagenes().isEmpty()
-                ? response.getImagenes().get(0) : null;
-        String base64 = primeraImagen != null ? primeraImagen.getBase64() : (response != null ? response.getBase64() : null);
-        String fileName = primeraImagen != null ? primeraImagen.getFileName() : (response != null ? response.getFileName() : null);
-        String contentType = primeraImagen != null ? primeraImagen.getContentType() : (response != null ? response.getContentType() : null);
+        List<TradicionalComprobanteResponse.Imagen> imagenes = allImagenes(response);
 
         Map<String, Object> payload = new LinkedHashMap<>();
-        boolean isError = base64 == null || base64.isBlank();
+        boolean isError = imagenes.isEmpty();
         wsExtLogService.log(ProviderCallLog.builder()
                 .uuid(command.getUuid())
                 .providerKey(PROVIDER_KEY)
                 .wsKey(WS_KEY_VERIFY)
                 .url(fullUrl)
                 .requestJson(null)
-                .responseJson(isError ? null : "[comprobante " + fileName + "]")
+                .responseJson(isError ? null : "[" + imagenes.size() + " comprobante(s)]")
                 .durationMs(System.currentTimeMillis() - startMs)
                 .isError(isError)
                 .errorMessage(isError ? "GenerarComprobanteVenta no retorno contenido" : null)
                 .build());
         if (!isError) {
-            payload.put("comprobante_b64", base64);
-            payload.put("file_name", fileName);
-            payload.put("content_type", contentType);
+            payload.put("imagenes", imagenes);
         }
         payload.put("ventaId", command.getVentaId());
 
@@ -766,6 +760,27 @@ public class TradicionalWebClientAdapter implements
 
     private String encodeParam(String value) {
         return value != null ? java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8) : "";
+    }
+
+    /** Normaliza las 2 formas posibles de GenerarComprobanteVenta a una sola lista — con
+     * formato=1/2 el proveedor responde una lista (imagenes[], una por cada boleto/juego
+     * vendido en la venta, ej. Pozo Millonario + Revancha = 2); con formato=0 (PDF, fallback
+     * si el proveedor ignora el parametro) responde un solo archivo plano. */
+    private List<TradicionalComprobanteResponse.Imagen> allImagenes(TradicionalComprobanteResponse response) {
+        if (response == null) {
+            return List.of();
+        }
+        if (response.getImagenes() != null && !response.getImagenes().isEmpty()) {
+            return response.getImagenes();
+        }
+        if (response.getBase64() != null && !response.getBase64().isBlank()) {
+            TradicionalComprobanteResponse.Imagen imagen = new TradicionalComprobanteResponse.Imagen();
+            imagen.setFileName(response.getFileName());
+            imagen.setContentType(response.getContentType());
+            imagen.setBase64(response.getBase64());
+            return List.of(imagen);
+        }
+        return List.of();
     }
 
     /** Resumen legible de GenerarComprobanteVenta para logs — sin el base64 completo,
