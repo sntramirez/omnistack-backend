@@ -543,9 +543,9 @@ public class TradicionalWebClientAdapter implements
         log.info("Tradicionales generateComprobante GET url={}", fullUrl);
         long startMs = System.currentTimeMillis();
 
-        TradicionalComprobanteResponse response;
+        String rawBody;
         try {
-            response = omnistackWebClient.get()
+            rawBody = omnistackWebClient.get()
                     .uri(fullUrl)
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, clientResponse -> clientResponse.bodyToMono(String.class)
@@ -566,7 +566,7 @@ public class TradicionalWebClientAdapter implements
                                         .build());
                                 return Mono.error(new IntegrationException(errMsg));
                             }))
-                    .bodyToMono(TradicionalComprobanteResponse.class)
+                    .bodyToMono(String.class)
                     .block();
         } catch (WebClientRequestException exception) {
             String errMsg = "Error de conexion al invocar GenerarComprobanteVenta: " + rootCauseMessage(exception);
@@ -582,6 +582,14 @@ public class TradicionalWebClientAdapter implements
                     .errorMessage(errMsg)
                     .build());
             throw new IntegrationException(errMsg, exception);
+        }
+
+        log.info("Tradicionales generateComprobante response url={} body={}", fullUrl, rawBody);
+        TradicionalComprobanteResponse response;
+        try {
+            response = rawBody != null ? objectMapper.readValue(rawBody, TradicionalComprobanteResponse.class) : null;
+        } catch (JsonProcessingException e) {
+            throw new IntegrationException("GenerarComprobanteVenta retorno un body no parseable");
         }
 
         TradicionalComprobanteResponse.Imagen primeraImagen = response != null && response.getImagenes() != null && !response.getImagenes().isEmpty()
