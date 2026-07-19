@@ -87,6 +87,8 @@ public class TradicionalWebClientAdapter implements
     private static final String WS_KEY_PRECHECK_CASHOUT = "PRECHECK.CASHOUT";
     private static final String WS_KEY_EXECUTE_CASHOUT = "EXECUTE.CASHOUT";
     private static final String PRODUCTO_VENDER_TRADICIONALES = "Tradicionales";
+    /** formato query param de GenerarComprobanteVenta: 0=PDF, 1=PNG, 2=JPG (spec v0005). */
+    private static final String FORMATO_PNG = "1";
 
     private final WebClient omnistackWebClient;
     private final ProviderConfigService providerConfigService;
@@ -535,7 +537,8 @@ public class TradicionalWebClientAdapter implements
         String url = operationPath;
         String fullUrl = url + "?ventaId=" + command.getVentaId()
                 + "&idUsuario=" + encodeParam(command.getIdUsuario())
-                + "&puntoDeVenta=" + encodeParam(command.getPuntoDeVenta());
+                + "&puntoDeVenta=" + encodeParam(command.getPuntoDeVenta())
+                + "&formato=" + FORMATO_PNG;
 
         log.info("Tradicionales generateComprobante GET url={}", fullUrl);
         long startMs = System.currentTimeMillis();
@@ -581,23 +584,29 @@ public class TradicionalWebClientAdapter implements
             throw new IntegrationException(errMsg, exception);
         }
 
+        TradicionalComprobanteResponse.Imagen primeraImagen = response != null && response.getImagenes() != null && !response.getImagenes().isEmpty()
+                ? response.getImagenes().get(0) : null;
+        String base64 = primeraImagen != null ? primeraImagen.getBase64() : (response != null ? response.getBase64() : null);
+        String fileName = primeraImagen != null ? primeraImagen.getFileName() : (response != null ? response.getFileName() : null);
+        String contentType = primeraImagen != null ? primeraImagen.getContentType() : (response != null ? response.getContentType() : null);
+
         Map<String, Object> payload = new LinkedHashMap<>();
-        boolean isError = response == null || response.getBase64() == null || response.getBase64().isBlank();
+        boolean isError = base64 == null || base64.isBlank();
         wsExtLogService.log(ProviderCallLog.builder()
                 .uuid(command.getUuid())
                 .providerKey(PROVIDER_KEY)
                 .wsKey(WS_KEY_VERIFY)
                 .url(fullUrl)
                 .requestJson(null)
-                .responseJson(isError ? null : "[pdf " + response.getFileName() + "]")
+                .responseJson(isError ? null : "[comprobante " + fileName + "]")
                 .durationMs(System.currentTimeMillis() - startMs)
                 .isError(isError)
                 .errorMessage(isError ? "GenerarComprobanteVenta no retorno contenido" : null)
                 .build());
         if (!isError) {
-            payload.put("comprobante_b64", response.getBase64());
-            payload.put("file_name", response.getFileName());
-            payload.put("content_type", response.getContentType());
+            payload.put("comprobante_b64", base64);
+            payload.put("file_name", fileName);
+            payload.put("content_type", contentType);
         }
         payload.put("ventaId", command.getVentaId());
 

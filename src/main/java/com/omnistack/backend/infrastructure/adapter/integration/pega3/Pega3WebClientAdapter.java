@@ -80,6 +80,8 @@ public class Pega3WebClientAdapter implements
     private static final String WS_KEY_CREATE_TICKET = "CREATE_TICKET.CASHIN";
     private static final String WS_KEY_VERIFY_COMPROBANTE = "VERIFY_COMPROBANTE.CASHIN";
     private static final String WS_KEY_REVERSE = "REVERSE.CASHIN";
+    /** formato query param de GenerarComprobantePega: 0=PDF, 1=PNG, 2=JPG (spec v0005). */
+    private static final String FORMATO_PNG = "1";
 
     private final WebClient omnistackWebClient;
     private final ProviderConfigService providerConfigService;
@@ -305,7 +307,8 @@ public class Pega3WebClientAdapter implements
         StringBuilder url = new StringBuilder(operationPath)
                 .append("?ventaId=").append(encodeParam(ventaId))
                 .append("&idUsuario=").append(encodeParam(idUsuario))
-                .append("&transaccion=").append(encodeParam(transaccion));
+                .append("&transaccion=").append(encodeParam(transaccion))
+                .append("&formato=").append(FORMATO_PNG);
         if (command.getPuntoDeVenta() != null && !command.getPuntoDeVenta().isBlank()) {
             url.append("&puntoDeVenta=").append(encodeParam(command.getPuntoDeVenta()));
         }
@@ -359,23 +362,29 @@ public class Pega3WebClientAdapter implements
             throw new IntegrationException(errMsg, exception);
         }
 
+        Pega3ComprobanteResponse.Imagen primeraImagen = response != null && response.getImagenes() != null && !response.getImagenes().isEmpty()
+                ? response.getImagenes().get(0) : null;
+        String base64 = primeraImagen != null ? primeraImagen.getBase64() : (response != null ? response.getBase64() : null);
+        String fileName = primeraImagen != null ? primeraImagen.getFileName() : (response != null ? response.getFileName() : null);
+        String contentType = primeraImagen != null ? primeraImagen.getContentType() : (response != null ? response.getContentType() : null);
+
         Map<String, Object> payload = new LinkedHashMap<>();
-        boolean isError = response == null || response.getBase64() == null || response.getBase64().isBlank();
+        boolean isError = base64 == null || base64.isBlank();
         wsExtLogService.log(ProviderCallLog.builder()
                 .uuid(command.getUuid())
                 .providerKey(PROVIDER_KEY)
                 .wsKey(WS_KEY_VERIFY_COMPROBANTE)
                 .url(fullUrl)
                 .requestJson(null)
-                .responseJson(isError ? null : "[pdf " + response.getFileName() + "]")
+                .responseJson(isError ? null : "[comprobante " + fileName + "]")
                 .durationMs(System.currentTimeMillis() - startMs)
                 .isError(isError)
                 .errorMessage(isError ? "GenerarComprobantePega no retorno contenido" : null)
                 .build());
         if (!isError) {
-            payload.put("comprobante_b64", response.getBase64());
-            payload.put("file_name", response.getFileName());
-            payload.put("content_type", response.getContentType());
+            payload.put("comprobante_b64", base64);
+            payload.put("file_name", fileName);
+            payload.put("content_type", contentType);
         }
 
         return ExternalTransactionResponse.builder()
