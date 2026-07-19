@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "4d57f9fe-a2fe-47ea-bf07-5ab987921360",
+    "_postman_id": "2f44e059-2025-4a4c-a886-f38158d5d6ef",
     "name": "OmniStack — Mock Server v11",
     "description": "Colección con examples de respuesta por proveedor. Importar en Postman y publicar como Mock Server para obtener una URL pública que devuelve respuestas sin necesidad del backend real.\n\nv10 (2026-07-03): corrige los examples de Lotería Nacional/Pega3 contra el spec técnico real del proveedor (docs/LOTERIA NACIONAL.docx). Ver carpeta '📌 NOTAS v11' para el detalle de cambios y preguntas abiertas que siguen pendientes de confirmar con negocio/proveedor.\n\nActualizacion 2026-07-12: se agregaron las carpetas CASH_OUT (pago de premios) de LN PEGA3 y LN TRADICIONALES — ConsultarTicket (PRECHECK) + PagarTicket/PagoPremioTicketTradicional (EXECUTE). Sin validar contra QA real todavia; subcategory_code de los items PREMIOS es un supuesto (igual al item CASH_IN correspondiente), pendiente de confirmar.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
