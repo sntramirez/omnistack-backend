@@ -584,13 +584,13 @@ public class TradicionalWebClientAdapter implements
             throw new IntegrationException(errMsg, exception);
         }
 
-        log.info("Tradicionales generateComprobante response url={} body={}", fullUrl, rawBody);
         TradicionalComprobanteResponse response;
         try {
             response = rawBody != null ? objectMapper.readValue(rawBody, TradicionalComprobanteResponse.class) : null;
         } catch (JsonProcessingException e) {
             throw new IntegrationException("GenerarComprobanteVenta retorno un body no parseable");
         }
+        log.info("Tradicionales generateComprobante response url={} summary={}", fullUrl, redactBase64(response));
 
         TradicionalComprobanteResponse.Imagen primeraImagen = response != null && response.getImagenes() != null && !response.getImagenes().isEmpty()
                 ? response.getImagenes().get(0) : null;
@@ -766,6 +766,23 @@ public class TradicionalWebClientAdapter implements
 
     private String encodeParam(String value) {
         return value != null ? java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8) : "";
+    }
+
+    /** Resumen legible de GenerarComprobanteVenta para logs — sin el base64 completo,
+     * solo su tamaño, para poder ver cuantas imagenes vinieron sin inundar la consola. */
+    private String redactBase64(TradicionalComprobanteResponse response) {
+        if (response == null) {
+            return "null";
+        }
+        if (response.getImagenes() != null && !response.getImagenes().isEmpty()) {
+            String imagenes = response.getImagenes().stream()
+                    .map(img -> "{fileName=" + img.getFileName() + ", contentType=" + img.getContentType()
+                            + ", base64Length=" + (img.getBase64() != null ? img.getBase64().length() : 0) + "}")
+                    .collect(java.util.stream.Collectors.joining(", "));
+            return "{total=" + response.getTotal() + ", formato=" + response.getFormato() + ", imagenes=[" + imagenes + "]}";
+        }
+        return "{fileName=" + response.getFileName() + ", contentType=" + response.getContentType()
+                + ", base64Length=" + (response.getBase64() != null ? response.getBase64().length() : 0) + "}";
     }
 
     private String rootCauseMessage(Throwable exception) {
