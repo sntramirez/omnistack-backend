@@ -102,9 +102,10 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
      * Genera el comprobante PDF (GenerarComprobantePega) solo si la operacion esta configurada
      * y hay un valor disponible para "transaccion". La respuesta de ConsultarTicket/CrearTicket
      * de Pega3 no incluye ese dato (confirmado contra QA real, 2026-07-15) — se usa el mismo
-     * valor de uuid que se envio como customerSessionId al crear el ticket (persistido en
-     * IN_OMNI_REGISTRO_TRX por CREATE_TICKET, recuperado aqui por ticketNumber/authorization)
-     * como candidato, ya que "transaccion" se documenta como "codigo de la transaccion asociada
+     * valor de uuid que se envio como customerSessionId al vender el ticket (persistido en
+     * IN_OMNI_REGISTRO_TRX por EXECUTE — ahi es donde Pega3 llama CrearTicket, ya no en
+     * CREATE_TICKET; recuperado aqui por ticketNumber/authorization) como candidato, ya que
+     * "transaccion" se documenta como "codigo de la transaccion asociada
      * a la venta" — es una hipotesis pendiente de confirmar en QA, no un dato oficial del
      * proveedor. El POS puede seguir enviendo "transaccion" explicito en el request, que tiene
      * prioridad sobre este fallback.
@@ -129,7 +130,7 @@ public class LoteriaPega3VerifyStrategy extends AbstractProviderStrategy impleme
         String transaccion = request instanceof VerifyRequest verifyRequest ? verifyRequest.getTransaccion() : null;
         boolean transaccionExplicita = transaccion != null && !transaccion.isBlank();
         if (!transaccionExplicita) {
-            transaccion = registroTrxPort.findCreateTicketUuidByAuthorization(request.getAuthorization()).orElse(null);
+            transaccion = registroTrxPort.findExecuteUuidByAuthorization(request.getAuthorization()).orElse(null);
         }
         if (transaccion == null || transaccion.isBlank()) {
             log.warn("Pega3 VERIFY sin comprobante: no se encontro 'transaccion' (ni explicito en el request, "
