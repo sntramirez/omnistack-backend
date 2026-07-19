@@ -57,6 +57,7 @@ public class ExecuteRequest extends BaseTransactionRequest {
             + "el POS lo reenvia del PRECHECK")
     private Integer tipoDocumento;
 
+    @jakarta.validation.Valid
     @JsonProperty("ticket_data")
     @JsonAlias("ticketData")
     @Schema(description = "Datos del ticket a crear y vender (solo Pega3) — CrearTicket vende el ticket "
