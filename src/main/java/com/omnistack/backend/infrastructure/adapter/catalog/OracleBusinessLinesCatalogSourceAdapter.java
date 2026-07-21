@@ -379,6 +379,7 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 .required(row.required())
                 .group(row.fieldGroup())
                 .conditional(row.conditionalOperator())
+                .length(row.fieldLength())
                 .build();
     }
 
@@ -478,7 +479,8 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
                 rs.getString("capability_code"),
                 rs.getInt("is_required") == 1,
                 rs.getString("field_group"),
-                rs.getString("conditional_operator"));
+                rs.getString("conditional_operator"),
+                rs.getObject("field_length", Integer.class));
     }
 
     // ---- Intermediate row records (multi-source queries) ----
@@ -608,7 +610,8 @@ public class OracleBusinessLinesCatalogSourceAdapter implements BusinessLinesCat
             String capabilityCode,
             boolean required,
             String fieldGroup,
-            String conditionalOperator) {
+            String conditionalOperator,
+            Integer fieldLength) {
         ServiceKey serviceKey() {
             return new ServiceKey(categoryCode, subcategoryCode, serviceProviderCode, rmsItemCode);
         }

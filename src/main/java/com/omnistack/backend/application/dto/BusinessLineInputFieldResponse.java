@@ -20,4 +20,7 @@ public class BusinessLineInputFieldResponse {
     boolean required;
     String group;
     String conditional;
+
+    @Schema(description = "Restriccion de tamano segun type: STRING=max caracteres, INTEGER=max digitos, DOUBLE=cantidad de decimales. Null=sin restriccion.")
+    Integer length;
 }

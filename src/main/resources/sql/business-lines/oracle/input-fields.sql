@@ -9,7 +9,8 @@ SELECT
     f.CAPABILITY            AS capability_code,
     f.IS_REQUIRED           AS is_required,
     f.FIELD_GROUP           AS field_group,
-    f.CONDITIONAL_OPERATOR  AS conditional_operator
+    f.CONDITIONAL_OPERATOR  AS conditional_operator,
+    f.FIELD_LENGTH          AS field_length
 FROM IN_OMNI_INPUT_FIELDS f
 WHERE f.RMS_ITEM_CODE IN (:rms_item_codes)
   AND f.ENABLED = 'S'

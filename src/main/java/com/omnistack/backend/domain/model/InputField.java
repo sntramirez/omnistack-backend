@@ -19,4 +19,5 @@ public class InputField {
     boolean required;
     String group;
     String conditional;
+    Integer length;
 }
