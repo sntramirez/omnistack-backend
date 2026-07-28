@@ -14,12 +14,14 @@ The critical business context — field mappings, provider contracts, and integr
 
 ## Commands
 
+No Maven wrapper is checked in — use the system `mvn` (3.9+), not `./mvnw`.
+
 ```bash
-./mvnw clean package -DskipTests   # build JAR
-./mvnw spring-boot:run              # run (dev profile, port 8086)
-./mvnw test                         # all tests
-./mvnw test -Dtest=ClassName        # single test class
-./mvnw test -Dtest=ClassName#method # single test method
+mvn clean package -DskipTests   # build JAR
+mvn spring-boot:run              # run (dev profile, port 8086)
+mvn test                         # all tests
+mvn test -Dtest=ClassName        # single test class
+mvn test -Dtest=ClassName#method # single test method
 ```
 
 Swagger UI: `http://localhost:8086/swagger-ui.html`  
@@ -234,7 +236,7 @@ Three Spring profiles; active profile set via `SPRING_PROFILES_ACTIVE` env var (
 |---|---|---|---|---|
 | `dev` | 8086 | `localhost:1521/XEPDB1` (TUKUNAFUNC) | `localhost:1521/XEPDB1` (rms) | `true` |
 | `qa` | 8086 | `10.100.3.20:1521:PRS6` (TUKUNAFUNC) | `vmcluts1scan.gfybeca.int/momqa_pdb1` (gpf_lectura) | `true` |
-| `prod` | 8086 | via env vars only | via env vars only | `false` |
+| `prod` | 8085 | via env vars only | via env vars only | `false` |
 
 All connection parameters in non-prod profiles are overridable via env vars (`APP_DATASOURCE_PROD_URL`, etc.).
 
@@ -271,6 +273,8 @@ When adding a new provider, append new numbered scripts to `docs/bdd/omnistack/`
 - Lombok throughout; no manual getters/setters
 - No JPA entities in `domain`; persistence adapters map explicitly
 - Strategy provider keys are lowercase strings matching `IN_OMNI_PROVEEDOR_CONFIG.PROVEEDOR_KEY`: `"ecuabet"`, `"loteria"`, `"pega3"`, `"tradicional"`, `"claro"`
+- Oracle PK generation always uses sequences (`SCHEMA.SEQ_xxx.NEXTVAL`) — never `MAX(PK)+1` (race condition under concurrency). Sequences are documented in `docs/bdd/omnistack/ALL_SEQUENCES.sql`
+- Every new/changed public class or method needs JavaDoc (`@param`/`@return`/`@throws` where applicable) — enforced by `AGENTS.md`'s closing checklist, along with Swagger docs, unit tests, and updating `README.md` / the Postman collection when a contract changes
 
 ## Test conventions
 
@@ -282,6 +286,7 @@ When adding a new provider, append new numbered scripts to `docs/bdd/omnistack/`
 
 | File | When to read |
 |---|---|
+| `AGENTS.md` | Implementation standards and closing checklist (JavaDoc, tests, docs updates) for any change — read before opening a PR |
 | `docs/CLAUDE.md` | Full integration context — read before any provider work |
 | `docs/MapeoCampos_v8.xlsx` | Field-by-field mapping OmniStack ↔ provider per phase |
 | `docs/document_pdf.pdf` | CLARO SOAP technical spec (XML schema, field definitions, offer IDs) |
