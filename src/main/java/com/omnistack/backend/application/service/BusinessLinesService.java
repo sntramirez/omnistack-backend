@@ -170,6 +170,8 @@ public class BusinessLinesService implements BusinessLinesUseCase {
                 .group(inputField.getGroup())
                 .conditional(inputField.getConditional())
                 .length(inputField.getLength())
+                .regex(inputField.getRegex())
+                .groupLength(inputField.getGroupLength())
                 .build();
     }
 

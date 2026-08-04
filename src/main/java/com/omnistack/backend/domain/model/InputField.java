@@ -20,4 +20,6 @@ public class InputField {
     String group;
     String conditional;
     Integer length;
+    String regex;
+    Integer groupLength;
 }
