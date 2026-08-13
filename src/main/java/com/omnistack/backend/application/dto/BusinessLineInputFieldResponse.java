@@ -26,8 +26,12 @@ public class BusinessLineInputFieldResponse {
             + "Si groupLength no es null, length pasa a significar 'cantidad de grupos' en vez de 'cantidad de caracteres'. Null=sin restriccion.")
     Integer length;
 
-    @Schema(description = "Patron de validacion completo del valor tal como lo escribe el cajero (texto crudo, antes de "
-            + "convertirlo segun type). Aplica a cualquier type (STRING/INTEGER/DOUBLE). Null=sin regex, se valida solo por type/length.")
+    @Schema(description = "Patron de validacion del valor tal como lo escribe el cajero (texto crudo, antes de convertirlo "
+            + "segun type). Aplica a cualquier type (STRING/INTEGER/DOUBLE). Null=sin regex, se valida solo por type/length. "
+            + "IMPORTANTE: si groupLength es null, el regex valida el VALOR COMPLETO (ej. Loteria: length=5, regex=\"^[0-9]+$\" "
+            + "sobre \"12345\"). Si groupLength NO es null, el regex valida CADA GRUPO por separado, no el valor concatenado "
+            + "(ej. Pozo: length=4, groupLength=2, regex=\"^(?:0[1-9]|1[0-9]|2[0-5])$\" se aplica a cada uno de los 4 numeros "
+            + "de \"22 22 22 01\", no a la cadena completa).")
     String regex;
 
     @Schema(description = "Caracteres por grupo, solo para campos de texto (type=STRING) compuestos por varios numeros "

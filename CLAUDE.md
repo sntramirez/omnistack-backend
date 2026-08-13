@@ -131,6 +131,16 @@ Capabilities resolution uses a two-source strategy:
 1. **Primary** (`ad-capabilities.sql`): derives capabilities per `rms_item_code` from `IN_OMNI_PROVEEDOR_WS_DEFS` rows with `DEFAULT_CLAVE = 'item'` or `'item.%'`
 2. **Fallback** (`ad-capabilities-by-provider.sql`): for items without `item.*` entries (e.g., Claro), derives capabilities per `service_provider_code` from `IN_OMNI_PROVEEDOR_CONFIG` + `IN_OMNI_PROVEEDOR_WS` enabled endpoints
 
+### Input-field contract (`IN_OMNI_INPUT_FIELDS`)
+
+`input-fields.sql` reads `IN_OMNI_INPUT_FIELDS` (per `rms_item_code` + capability) into each service node of `/business-lines`. These rows define what the POS renders and validates — and must contain **only** values the cashier/customer decides, not where the option data comes from. Columns beyond name/type carry validation metadata that the front-end enforces:
+
+- `FIELD_LENGTH` — max length (estimated per provider spec when the real cap is unknown)
+- `REGEX` — client-side validation pattern; applies to any field `type`, not just text
+- `GROUP_LENGTH` — grouping for composite fields; `null ≠ 1 ≠ 0` are distinct meanings, enforced by a CHECK constraint (see scripts 40–41)
+
+All `/business-lines` field metadata is exposed in **snake_case** via `@JsonProperty` on the response DTOs (e.g. `BusinessLineInputFieldResponse`).
+
 ### DB-driven provider configuration (three in-memory caches)
 
 All provider config is loaded from Oracle at startup and held in memory. No `@Value` injection for provider secrets — use these services in strategies:
@@ -245,11 +255,12 @@ All connection parameters in non-prod profiles are overridable via env vars (`AP
 Numbered SQL scripts must be run in order:
 
 - `docs/bdd/local-setup/` — one-time local dev environment (admin, RMS DDL, grants)
-- `docs/bdd/omnistack/` — OmniStack schema DDL + DML (01 = DDL, 02+ = data/fixes)
+- `docs/bdd/omnistack/` — OmniStack schema DDL + DML (01 = DDL, 02+ = data/fixes); currently numbered through `43`
   - Script `25` adds `ID_HOMOLOGADO` column to `AD_SERVICIO_PARAMETROS`
   - Script `26` creates `IN_OMNI_CASHOUT_CUPO_DIARIO` table for CASH_OUT daily quota control
+  - Scripts `38–43` populate `IN_OMNI_INPUT_FIELDS` validation metadata (`FIELD_LENGTH`, `REGEX`, `GROUP_LENGTH`) — script `40` adds the columns, `41` adds the `GROUP_LENGTH` CHECK constraint
 
-When adding a new provider, append new numbered scripts to `docs/bdd/omnistack/` — never modify existing ones.
+When adding a new provider, append new numbered scripts to `docs/bdd/omnistack/` — never modify existing ones. Check the highest existing number first (`ls docs/bdd/omnistack/`) to pick the next one.
 
 ## Adding a new provider
 
